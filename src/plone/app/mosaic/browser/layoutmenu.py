@@ -13,7 +13,7 @@ from plone.dexterity.browser.view import DefaultView
 from plone.memoize import view
 from Products.CMFDynamicViewFTI.interfaces import ISelectableBrowserDefault
 from Products.CMFPlone.utils import parent
-from urllib import quote
+from urllib.parse import quote
 from zExceptions import NotFound
 from zope.browsermenu.interfaces import IBrowserMenu
 from zope.browsermenu.menu import BrowserMenu

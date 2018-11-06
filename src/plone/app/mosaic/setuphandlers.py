@@ -5,7 +5,7 @@ from plone.app.blocks.utils import resolveResource
 from plone.app.mosaic.interfaces import IMosaicLayer
 from plone.app.mosaic.utils import getPersistentResourceDirectory
 from plone.resource.manifest import MANIFEST_FILENAME
-from StringIO import StringIO
+from io import BytesIO
 from zope.component import getUtility
 from zope.interface import alsoProvides
 from zope.schema.interfaces import IVocabularyFactory
@@ -36,13 +36,13 @@ def create_ttw_site_layout_examples(portal):
     alsoProvides(request, IMosaicLayer)
     sitelayout = getPersistentResourceDirectory(SITE_LAYOUT_RESOURCE_NAME)
     custom = getPersistentResourceDirectory('custom', sitelayout)
-    custom.writeFile(MANIFEST_FILENAME, StringIO(EXAMPLE_SITE_LAYOUT))
+    custom.writeFile(MANIFEST_FILENAME, BytesIO(EXAMPLE_SITE_LAYOUT.encode('utf-8')))
     custom.writeFile(
         'site.html',
-        StringIO(
+        BytesIO(
             resolveResource(
                 '++sitelayout++default/default.html'
-            ).encode('utf-8')
+            )
         )
     )
 
@@ -54,13 +54,13 @@ def create_ttw_content_layout_examples(portal):
         CONTENT_LAYOUT_RESOURCE_NAME
     )
     custom = getPersistentResourceDirectory('custom', contentlayout)
-    custom.writeFile(MANIFEST_FILENAME, StringIO(EXAMPLE_CONTENT_LAYOUT))
+    custom.writeFile(MANIFEST_FILENAME, BytesIO(EXAMPLE_CONTENT_LAYOUT.encode('utf-8')))
     custom.writeFile(
         'basic.html',
-        StringIO(
+        BytesIO(
             resolveResource(
                 '++contentlayout++default/basic.html'
-            ).encode('utf-8')
+            )
         )
     )
 
