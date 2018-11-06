@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from ConfigParser import SafeConfigParser
+from configparser import SafeConfigParser
 from plone import api
 from plone.app.blocks.interfaces import CONTENT_LAYOUT_MANIFEST_FORMAT
 from plone.app.blocks.interfaces import CONTENT_LAYOUT_RESOURCE_NAME

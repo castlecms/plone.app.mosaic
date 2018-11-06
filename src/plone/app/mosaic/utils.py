@@ -37,7 +37,7 @@ def _getWidgetName(field, widgets, request):
         factory = widgets[field.__name__]
     else:
         factory = getMultiAdapter((field, request), IFieldWidget)
-    if isinstance(factory, basestring):
+    if isinstance(factory, str):
         return factory
     elif isinstance(factory, ParameterizedWidget):
         factory = factory.widget_factory
