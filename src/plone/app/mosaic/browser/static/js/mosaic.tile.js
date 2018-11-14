@@ -222,6 +222,13 @@ define([
   Tile.prototype.getConfig = function(){
     var tile_config;
     var tiletype = this.getType();
+    if(tiletype === 'IRichText-text'){
+      tiletype = 'IRichTextBehavior-text';
+    }else if(tiletype === 'ILeadImage-image'){
+      tiletype = 'ILeadImageBehavior-image';
+    }else if(tiletype === 'ILeadImage-image_caption'){
+      tiletype = 'ILeadImageBehavior-image_caption';
+    }
     // Get tile config
     for (var x = 0; x < $.mosaic.options.tiles.length; x += 1) {
       var found = false;
@@ -260,6 +267,7 @@ define([
     }
 
     if(!tile_config){
+      debugger;
       // dive out of here, something went wrong finding tile config
       log.error('Could not load tile config for tile type: ' + tiletype);
       return;
@@ -1025,6 +1033,7 @@ define([
       };
 
       // Init rich editor
+      debugger;
       pattern = new TinyMCE($content, $.extend(
         true, {}, $.mosaic.options.tinymce, { inline: false, tiny: {
         body_id: id,
