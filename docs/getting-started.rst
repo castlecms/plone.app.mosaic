@@ -159,8 +159,8 @@ To add a new tile in the **Mosaic editor**, select the tile from the rightmost m
         Wait Until Element Is Visible  css=.mosaic-toolbar
         Highlight  css=.mosaic-menu-insert
         Click element  css=.mosaic-menu-insert a
-        Wait until element is visible  css=.mosaic-option-irichtext-text
-        Mouse over  css=.mosaic-dropdown .mosaic-option-irichtext-text
+        Wait until element is visible  css=.mosaic-option-irichtextbehavior-text
+        Mouse over  css=.mosaic-dropdown .mosaic-option-irichtextbehavior-text
 
         Capture and crop page screenshot
         ...  _screenshots/mosaic-editor-select-field-text-tile.png
@@ -175,7 +175,7 @@ and drag the appearing tile into the desired position.
 
     Show how to drag a new tile into its initial position
 
-        Click element  css=.mosaic-dropdown .mosaic-option-irichtext-text
+        Click element  css=.mosaic-dropdown .mosaic-option-irichtextbehavior-text
         Wait until page contains element  css=.mosaic-helper-tile-new
         Wait until element is visible  css=.mosaic-helper-tile-new
         Update element style
