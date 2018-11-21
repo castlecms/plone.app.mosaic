@@ -40,6 +40,13 @@ Changelog
 ------------------------
 
 - rebuild js/css
+2.0.0.dev17 (unreleased)
+------------------------
+
+- Rebuild js/css
+  [vangheem]
+
+- Plone 5.2 compat imports
   [vangheem]
 
 - Feature: provide ability to give options to field renderer
