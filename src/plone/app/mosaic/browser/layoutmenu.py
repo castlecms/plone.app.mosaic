@@ -13,7 +13,6 @@ from plone.dexterity.browser.view import DefaultView
 from plone.memoize import view
 from Products.CMFDynamicViewFTI.interfaces import ISelectableBrowserDefault
 from Products.CMFPlone.utils import parent
-from urllib.parse import quote
 from zExceptions import NotFound
 from zope.browsermenu.interfaces import IBrowserMenu
 from zope.browsermenu.menu import BrowserMenu
@@ -29,6 +28,11 @@ from plone.protect.utils import addTokenToUrl
 from plone.app.content.browser.selection import DefaultViewSelectionView
 
 import logging
+
+try:
+    from urllib.parse import quote
+except ImportError:
+    from urllib import quote
 
 
 logger = logging.getLogger('plone.app.mosaic')
