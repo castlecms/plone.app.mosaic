@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from configparser import SafeConfigParser
 from plone import api
 from plone.app.blocks.interfaces import CONTENT_LAYOUT_MANIFEST_FORMAT
 from plone.app.blocks.interfaces import CONTENT_LAYOUT_RESOURCE_NAME
@@ -19,6 +18,11 @@ from zope.publisher.browser import BrowserView
 
 import io
 import json
+
+try:
+    from configparser import SafeConfigParser
+except ImportError:
+    from ConfigParser import SafeConfigParser
 
 
 def loadManifest(data):
