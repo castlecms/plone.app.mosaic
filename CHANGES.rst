@@ -1,6 +1,12 @@
 Changelog
 =========
 
+2.0.0.dev245(12/24/2019)
+------------------------
+
+- Show a message to be clear when fields are hidden from properties pane
+  [lucid-0]
+
 2.0.0.dev24 (01/24/2019)
 ------------------------
 
