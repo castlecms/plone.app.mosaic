@@ -410,6 +410,19 @@ define([
                   .addClass("mosaic-tile-label-left")
           )
         );
+        // this.$el.prepend(
+        //   $($.mosaic.document.createElement("div"))
+        //       .addClass("my-mosaic-tile-control my-mosaic-tile-label")
+        //       .append(
+        //       $($.mosaic.document.createElement("div"))
+        //           .addClass("my-mosaic-tile-label-content")
+        //           .html('+ / -')
+        //   )
+        //       .append(
+        //       $($.mosaic.document.createElement("div"))
+        //           .addClass("my-mosaic-tile-label-left")
+        //   )
+        // );
       }
 
       this.makeMovable();
@@ -452,7 +465,14 @@ define([
 
       if(!$.mosaic.hasContentLayout){
         _addButton('Delete', 'delete', this.deleteClicked.bind(this));
+        _addButton('Adjust Padding', 'padding-adjust', this.adjustPadding.bind(this));
         var confirmBtn = _addButton('Confirm delete', 'confirm', this.confirmClicked.bind(this));
+        const leftPaddingSubtract = _addButton('-', 'padding-left-decrease', this.decreaseLeftPaddingClicked.bind(this));
+        const leftPadding = _addButton('Left Padding', 'padding-left', this.consoleLog.bind(this));
+        const leftPaddingAdd = _addButton('+', 'padding-left-increase', this.increaseLeftPaddingClicked.bind(this));
+        $(leftPaddingSubtract).hide();
+        $(leftPadding).hide().prop('disable', true);
+        $(leftPaddingAdd).hide();
         $(confirmBtn).hide();
         var btn = _addButton('Cancel', 'cancel', this.cancelClicked.bind(this));
         $(btn).hide();
@@ -473,11 +493,36 @@ define([
       $('.mosaic-btn-settings,.mosaic-btn-delete', this.$el).show();
       $('.mosaic-btn-cancel,.mosaic-btn-confirm', this.$el).hide();
     };
+    Tile.prototype.consoleLog = function(e){
+      e.preventDefault();
+      this.$el.addClass('some-class-now')    
+      $('.mosaic-btn-padding-left-increase,.mosaic-btn-padding-left-decrease', this.$el).show();
+    
+    };
+     
+    Tile.prototype.decreaseLeftPaddingClicked = function(e){
+      e.preventDefault();
+      // $('.mosaic-btn-settings,.mosaic-btn-delete', this.$el).show();
+      // $('.mosaic-btn-cancel,.mosaic-btn-confirm', this.$el).hide();
+    };
 
     Tile.prototype.deleteClicked = function(e){
       e.preventDefault();
       $('.mosaic-btn-settings,.mosaic-btn-delete', this.$el).hide();
       $('.mosaic-btn-cancel,.mosaic-btn-confirm', this.$el).show();
+    };
+    Tile.prototype.adjustPadding = function(e){
+      e.preventDefault();
+      $('.mosaic-btn-padding-adjust', this.$el).hide();
+      $('.mosaic-btn-padding-left-decrement,.mosaic-btn-padding-left-increment,.mosaic-btn-padding-left', this.$el).show();
+    };
+    Tile.prototype.increaseLeftPaddingClicked = function(e){
+      e.preventDefault();
+      console.log(e);
+        console.log('hi')
+        this.$el.addClass('mosaic-tile-padding-top-50')   
+      // $('.mosaic-btn-settings,.mosaic-btn-delete', this.$el).hide();
+      // $('.mosaic-btn-cancel,.mosaic-btn-confirm', this.$el).show();
     };
 
     Tile.prototype.confirmClicked = function(e){
