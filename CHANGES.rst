@@ -87,6 +87,420 @@ Changelog
   [jensens]
 
 - Fix robot tests in docs to no run into timing traps.
+2.2.5 (2022-06-28)
+------------------
+
+- Bugfix: Use TinyMCE `getContent()` to get editor contents on save
+  [frapell]
+
+- Add ``bootstrapPath`` less variable.
+  Now the bundle can be built with ``plone-compile-resources``.
+  Contains an upgrade step.
+  [thet]
+
+- Fix Flake8 errors
+  [jugmac00]
+
+
+2.2.4 (unreleased, no changes)
+------------------------------
+
+2.2.3 (2020-07-02)
+------------------
+
+- Remove obsolete ``mockup-patterns-base`` -> use ``pat-base``
+  [petschki]
+
+- fix TinyMCE dropdown menus in toolbar by implementing ``ui_container`` option
+  [petschki]
+
+
+2.2.2 (2020-04-07)
+------------------
+
+- Fix plone.app.contenttypes dependency for Plone 5.1
+  [agitator]
+
+- Improve tinymce toolbar sticky computation
+  [frapell]
+
+- fix .mosaic-width-quarter/.mosaic-width-three-quarters grid CSS to wrap correctly
+  [petschki]
+
+- refactor mosaic-grid.less imports to avoid duplicated CSS selectors. (#453)
+  [petschki]
+
+- be more specific when removing top-margin
+  [petschki]
+
+- safely read tile weight from registry
+  [petschki]
+
+- refactor testsuites and add robottests
+  [petschki]
+
+- Fix pip install command in .travis.yml
+  [staeff]
+
+- Fix bytestring join in main_template.py
+  [1letter]
+
+- Bugfix in robottest
+  [1letter]
+
+
+2.2.1 (2019-02-21)
+------------------
+
+Bug fixes:
+
+- add plone-container-xl width for mosaic-rows and fix layout when left toolbar is enabled/expanded
+  [petschki]
+
+- Fix action button sorting (see #439)
+  [petschki]
+
+- Fix issue with renamed IRichTextBehavior class
+  [petschki]
+
+- Plone 5.1 compatible versions
+  [petschki]
+
+
+2.2.0 (2019-02-20)
+------------------
+
+New features:
+
+- add uninstall profile for Plone versions >= 5
+  [petschki]
+
+- add python 3 compatibility
+  [petschki]
+
+Bug fixes:
+
+- when deleting custom layout within ``manage custom layouts`` do not show currently selected layout in ``replacement layout`` listing.
+  [petschki]
+
+- Add styles to remove top-margin on first elements in a grid-cell
+  [MrTango]
+
+
+2.1.1 (2018-05-17)
+------------------
+
+- Fluid row styles only make sense on pages without portlets.
+  In Plone 5.1.3 we can check that automatically (with plone.app.layout 2.8.0) and those styles are only active if no portlet columns are shown.
+  [agitator]
+
+
+2.1.0 (2018-04-13)
+------------------
+
+New features:
+
+- Add functionality for fluid (full width) rows.
+  [agitator, davilima6]
+
+- Add documentation for advanced editor features.
+  [agitator, davilima6]
+
+Bug fixes:
+
+- Image in "Existing-Content" Tile scaled width only, height was kept and aspect-ratio broke.
+  Fixes https://github.com/plone/plone.app.standardtiles/issues/83.
+  [jensens]
+
+- Hide dependencies - like blocks and tiles - of Mosaic from appearing at Plone site setup.
+  This reduces confusion and removes clutter from the setup screen.
+  [jensens]
+
+- Transform: Acquire a safe context or the portal object.
+  In cases of a 404 page, the context is a browser view.
+  [thet]
+
+- Imports are Python3 compatible
+  [b4oshany]
+
+- Cleanup old code that would initialize TinyMCE several times for richtext tiles
+  Fixes `issue 407 <https://github.com/plone/plone.app.mosaic/issues/407>`_.
+  [frapell]
+
+
+2.0rc8 (2017-09-05)
+-------------------
+
+WARNING: Upgrading from plone.app.mosaic 1.x will make pages with mosaic layout
+look empty until plone.app.blocks has been upgraded (upgrade steps been run).
+After upgrade, you may need to manually tweak Plone registry to only display
+the desired tiles.
+
+Bug fixes:
+
+- Fix regression in 2.0.rc7 where removal of dead code was not completed
+  resulting in a runtime error
+  [datakurre]
+
+
+2.0rc7 (2017-08-21)
+-------------------
+
+New features:
+
+- Add simple descriptions for all the tiles listed in the docs.
+  [cguardia]
+
+- Allow to nest columns inside a cell
+  [frapell]
+
+- Allow to include custom CSS on rows
+  [frapell]
+
+Bug fixes:
+
+- Fix issue where default rich text tiles had context menu
+  from legacy HTML table tile
+  [datakurre]
+
+- Fix issue where TinyMCE was broken in properties overlay
+  [datakurre]
+
+- Fix issue where title field value was not set on some IE version
+  [datakurre]
+
+- Fix issue where block elements with display 'flex' were not blurred
+  [datakurre]
+
+
+2.0rc5 (2017-04-06)
+-------------------
+
+New features:
+
+- Add support for optiona ``permission``-key in content layout manifests
+  [datakurre]
+
+Bug fixes:
+
+- Fix grid and row styles for anonymous
+  [agitator]
+
+- Fix issue where global TinyMCE setting for paste_as_text was not
+  respected
+  [datakurre]
+
+- Fix issue where Mosaic Editor was activated on babel edit view
+  [datakurre]
+
+- Fix issue where Mosaic transforms did fire for ESI requests for ESI
+  tile helper views
+  [datakurre]
+
+- Fix issue where multiple tile configurations from the same page were being
+  autosaved at the same time causing write conflict errors
+  [datakurre]
+
+- Fix issue where configured text tile content was not removed from the server
+  when tile was deleted
+  [datakurre]
+
+Other changes:
+
+- Remove unneeded unittest2 imports
+  [tomgross]
+
+
+2.0.0rc4 (2016-12-13)
+---------------------
+
+New features:
+
+- Show layouts description in Mosaic Select Layout overlay
+  [annegilles]
+
+Bug fixes:
+
+- Disable non-functional table of contents tile by default
+  [datakurre]
+
+- Fix issue where toolbar menus were initially hidden on custom layout
+  [datakurre]
+
+- Fix issue where TinyMCE format menu was not visible
+  [datakurre]
+
+- Fix issue where default layouts did not work properly, because they were
+  registered as unicode strings when encoded ASCII strings were required
+  [datakurre]
+
+- Fix to disable layout editor when edit form has a status message
+  (which is usually a validation error message) as workaround for
+  editor not being able to display validation errors
+  [datakurre]
+
+
+2.0.0rc3 (2016-11-27)
+---------------------
+
+WARNING: Migration from 1.0.0 to 2.0.0 may still have unsolved issues.
+
+New features:
+
+- In the ``BodyClass`` transform, retrieve the content layout path from
+  ILayoutAware provided method which also considers default paths registered in
+  the registry. Fixes no layout classes added to the body tag with default
+  content layouts for types.
+  [thet]
+
+- Show layouts description in Mosaic Select Layout overlay
+  [annegilles]
+
+- Include source code button into TinyMCE toolbar by default
+  [datakurre]
+
+Bug fixes:
+
+- ``plone_view/mark_view`` was deprecated and removed.
+  Use ``plone_layout/mark_view`` instead.
+  [thet]
+
+- Fix issue where incomplete mosaic-grid bundle definition broke
+  Plone bundle merge
+  [datakurre]
+- Enhance documentation
+  [agitator, AnneGilles, krissik, staeff]
+
+- Fixes problems introduces with grid responsive styles
+  [agitator]
+
+
+2.0.0rc2 (2016-09-15)
+---------------------
+
+Bug fixes:
+
+- Fix issue where layout menu was misplaced in Mosaic toolbar
+  [datakurre]
+
+
+2.0.0rc1 (2016-09-15)
+---------------------
+
+WARNING: Migration from 1.0.0 to 2.0.0 may still unsolved have issues.
+
+Breaking changes:
+
+- Drop compatibility with Plone 4.3. For Plone 4.3 support, please use
+  plone.app.mosaic < 2.0
+  [datakurre, jensens]
+
+- Depend on adapterized plone.app.blocks >= 4.0.0
+  [jensens]
+
+- Depend on plone.app.contenttypes (for GS install profile)
+  [jensens]
+
+- Move to using plone.app.standardtiles.html instead of
+  the deprecated plone.app.standardtiles.rawhtml
+  [vangheem]
+
+- No longer use special HTML tiles that do not work in reusable layouts.
+  These tiles are now all deprecated: table, numbers, bullets, text,
+  subheading, heading
+  [vangheem]
+
+- Remove use image and attachment tiles as they are now deprecated
+  [vangheem]
+
+- Move custom layout from 'content' to 'customContentLayout' attribute
+  [datakurre]
+
+- Replace Deco-grid styles with Bootstrap mixins form mixins.grid.plone.less.
+  Allows to use override grid system using standard mosaic class names.
+  Main purpose is to unify the edit and view of your layout
+  (fixes https://github.com/plone/plone.app.mosaic/issues/231).
+  [agitator]
+
+New features:
+
+- Customize add form for types that have ILayoutAware enabled so that it just
+  presents a title/description field
+  [vangheem]
+
+- Provide outline mode to be able to inspect rows and tiles
+  [datakurre]
+
+- Add preview button (disabled by default) for previewing currently edited
+  layout
+  [datakurre]
+
+- Add a new raw embed tile
+  [agitator]
+
+- Saving a layout will now save default values for html tiles on the
+  reusable layout.
+  [vangheem]
+
+- Provide better use of permissions in UI and enforcements on the server
+  [vangheem]
+
+- Enhance layout selector styles
+  [vangheem]
+
+- Hide plone toolbar when mosaic editor is active
+  [vangheem]
+
+- Move tile remove button onto tile instead of in toolbar
+  [vangheem]
+
+- Rename "Close" to "Done" on properties form.
+  [vangheem]
+
+- Add sitelayouts-meta.zcml, which allows enabling site layouts in
+  buildout with ``zcml = plone.app.mosaic-meta:sitelayouts-meta.zcml``
+  [datakurre]
+
+Bug fixes:
+
+- Handle missing tiles and tile configuration with layout editor where it
+  doesn't destroy user's ability to still edit the layout/tiles.
+  [vangheem]
+
+- Fix bug when tinymce editor would no longer work when dragging one rich text
+  tile around another rich text tile.
+  [vangheem]
+
+- Fixes TinyMCE focus issues, disables row merging
+  [vangheem]
+
+- Fix TinyMCE Insert Image search results to have fixed maximum height
+  to prevent it from flowing over viewport
+  [datakurre]
+
+- Fix fieldset tabbing not working after user edits field tiles
+  [vangheem]
+
+- Fix pasting into title, description fields
+  [vangheem]
+
+- Use POST to render tiles through the editor so default query parameters
+  provided in url can be utilized with latest plone.tiles
+  [vangheem]
+
+- Fix problem where layouts could be saved without a name
+  [vangheem]
+
+- Fix table context menu overlapping modals
+  [vangheem]
+
+- Fix default layout image not showing properly
+  [vangheem]
+
+- Fix modal to be structured like other plone modals
+  [vangheem]
+
+- Fix to not set own overhead space of edit modal, the default should apply
   [jensens]
 
 - Fix reference to default layout preview image
@@ -108,6 +522,41 @@ Changelog
 
 - Fix modal to be structured like other plone modals
   [vangheem]
+
+- Fix issue where pattern settings are not applied to the body tag for mosaic
+  layouts
+  [jensens]
+
+- Fix issue where plone_pattern_setting view lookup ran into empty
+  (now renders all)
+  [jensens]
+
+Refactoring:
+
+- Move list of valid layout view names for LayoutWidget in a module variable,
+  so it can be extended on demand
+  [jensens]
+
+- Remove superfluos empty testing gs profile and its zcml
+  [jensens]
+
+- Log warning if plone_pattern_settings view was not found
+  [jensens]
+
+- Fix robot tests in docs to no run into timing traps
+  [jensens, gforcada]
+
+- Use buildout.coredev version pins
+  [gforcada]
+
+- Update testing infrastructure
+  [gforcada]
+
+- Make layouts HTML valid
+  [gforcada]
+
+- Add Webpack based frontend development flow
+  [datakurre]
 
 
 1.0 (2016-04-11)

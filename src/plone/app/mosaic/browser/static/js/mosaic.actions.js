@@ -77,10 +77,7 @@ define([
       // current tile state
       visible: function (tile) {
         return true;
-      },
-
-      // Should the action be undo-able?
-      undoable: false
+      }
 
     }, options);
 
@@ -118,9 +115,6 @@ define([
 
         // Exec actions
         mgr.actions[$(this).data("action")].exec(this);
-        if (mgr.actions[$(this).data("action")].undoable) {
-          $.mosaic.undo.snapshot();
-        }
       }
     });
   };
@@ -278,9 +272,18 @@ define([
     // Register save action
     $.mosaic.registerAction('save', {
       exec: function () {
+        $.mosaic.saving = true;
+        $('.mosaic-selected-tile', $.mosaic.document).each(function() {
+          var tile = new Tile(this);
+          tile.blur();
+        });
         $.mosaic.options.toolbar.trigger("selectedtilechange");
-        $.mosaic.saveLayoutToForm();
-        $("#form-buttons-save").click();
+        $.mosaic.queue(function(next) {
+          $.mosaic.saveLayoutToForm();
+          $("#form-buttons-save").click();
+          $.mosaic.saving = false;
+          next();
+        });
       },
       shortcut: {
         ctrl: true,
@@ -296,6 +299,23 @@ define([
 
         // Cancel form
         $("#form-buttons-cancel").click();
+      }
+    });
+
+    // Register preview action
+    $.mosaic.registerAction('preview', {
+      exec: function () {
+
+        // Trigger validation => drafting sync
+        $("#form-widgets-ILayoutAware-customContentLayout, " +
+            "[name='form.widgets.ILayoutAware.customContentLayout']")
+            .focus().blur();
+
+        // Layout preview
+        setTimeout(function(){
+          window.open(
+              $.mosaic.options.context_url + '/@@layout_preview', '_blank');
+        }, 1000);
       }
     });
 
@@ -324,20 +344,6 @@ define([
               .html($.trim(text))
               .height(height));
         }
-      }
-    });
-
-    // Register undo action
-    $.mosaic.registerAction('undo', {
-      exec: function () {
-        $.mosaic.undo.undo();
-      }
-    });
-
-    // Register redo action
-    $.mosaic.registerAction('redo', {
-      exec: function () {
-        $.mosaic.undo.redo();
       }
     });
 
@@ -615,10 +621,6 @@ define([
 
         // Exec actions
         $.mosaic.actionManager.actions[action].exec();
-
-        if ($.mosaic.actionManager.actions[action].undoable) {
-          $.mosaic.undo.snapshot();
-        }
 
         // Prevent other actions
         return false;

@@ -1,19 +1,21 @@
 # -*- coding: utf-8 -*-
 from plone import api
 from plone.app.blocks.interfaces import IBlocksTransformEnabled
-from plone.app.blocks.layoutbehavior import ILayoutAware
+from plone.app.blocks.layoutbehavior import ILayoutBehaviorAdaptable
 from plone.app.blocks.resource import ContentLayoutTraverser
 from plone.app.blocks.utils import resolveResource
 from plone.app.content.browser.interfaces import IFolderContentsView
+from plone.app.content.browser.selection import DefaultViewSelectionView
 from plone.app.contentmenu.interfaces import IContentMenuItem
 from plone.app.contentmenu.menu import DisplaySubMenuItem
 from plone.app.mosaic.interfaces import _
 from plone.app.mosaic.interfaces import IMosaicLayer
 from plone.dexterity.browser.view import DefaultView
 from plone.memoize import view
+from plone.protect.utils import addTokenToUrl
 from Products.CMFDynamicViewFTI.interfaces import ISelectableBrowserDefault
 from Products.CMFPlone.utils import parent
-from urllib import quote
+from six.moves.urllib.parse import quote
 from zExceptions import NotFound
 from zope.browsermenu.interfaces import IBrowserMenu
 from zope.browsermenu.menu import BrowserMenu
@@ -25,8 +27,6 @@ from zope.interface import implementer
 from zope.schema.interfaces import IVocabularyFactory
 from zope.traversing.interfaces import ITraversable
 from zope.traversing.namespace import SimpleHandler
-from plone.protect.utils import addTokenToUrl
-from plone.app.content.browser.selection import DefaultViewSelectionView
 
 import logging
 
@@ -42,7 +42,7 @@ def absolute_path(path):
 
 
 @implementer(ITraversable)
-@adapter(ILayoutAware, IMosaicLayer)
+@adapter(ILayoutBehaviorAdaptable, IMosaicLayer)
 class DisplayLayoutTraverser(SimpleHandler):
 
     def __init__(self, context, request):
@@ -70,7 +70,7 @@ class DisplayLayoutTraverser(SimpleHandler):
 
 
 @implementer(ITraversable)
-@adapter(ILayoutAware, IMosaicLayer)
+@adapter(ILayoutBehaviorAdaptable, IMosaicLayer)
 class DisplayContentLayoutTraverser(SimpleHandler):
 
     def __init__(self, context, request):
@@ -106,7 +106,7 @@ class DisplayLayoutView(DefaultView):
             raise
 
 
-@adapter(ILayoutAware, IMosaicLayer)
+@adapter(ILayoutBehaviorAdaptable, IMosaicLayer)
 class HiddenDisplaySubMenuItem(DisplaySubMenuItem):
 
     @view.memoize
@@ -121,7 +121,7 @@ class HiddenDisplaySubMenuItem(DisplaySubMenuItem):
 
 
 @implementer(IContentMenuItem)
-@adapter(ILayoutAware, IMosaicLayer)
+@adapter(ILayoutBehaviorAdaptable, IMosaicLayer)
 class DisplayLayoutSubMenuItem(BrowserSubMenuItem):
 
     title = _(u'label_choose_display', default=u'Display')
@@ -213,7 +213,7 @@ def getAvailableViewMethods(context):
 
 
 class DisplayLayoutMenu(BrowserMenu):
-    def getMenuItems(self, context, request):
+    def getMenuItems(self, context, request):  # noqa for now - C901 is too complex
         # Check required parameters
         if context is None or request is None:
             return []
@@ -245,8 +245,8 @@ class DisplayLayoutMenu(BrowserMenu):
             if term.value in folder_methods:
                 is_selected = term.value == folder_layout
                 id_ = term.value.split('++')[-1]
-                actionUrl = '%s/selectViewTemplate?templateId=%s' % (
-                    folder_url, quote(term.value),),
+                actionUrl = '{0:s}/selectViewTemplate?templateId={1:s}'.format(
+                    folder_url, quote(term.value))
                 actionUrl = addTokenToUrl(actionUrl, request)
                 folder_results.append({
                     'title': term.title,
@@ -273,8 +273,8 @@ class DisplayLayoutMenu(BrowserMenu):
             if term.value in context_methods:
                 is_selected = term.value == context_layout
                 id_ = term.value.split('++')[-1]
-                actionUrl = '%s/selectViewTemplate?templateId=%s' % (
-                    context_url, quote(term.value),)
+                actionUrl = '{0:s}/selectViewTemplate?templateId={1:s}'.format(
+                    context_url, quote(term.value))
                 actionUrl = addTokenToUrl(actionUrl, request)
                 context_results.append({
                     'title': term.title,
@@ -335,6 +335,6 @@ class LayoutAwareDefaultViewSelectionView(DefaultViewSelectionView):
         )
         vocab = vocab_factory(self.context)
         return (
-            list(super(LayoutAwareDefaultViewSelectionView, self).vocab) +
-            [(term.value, term.title) for term in vocab]
+            list(super(LayoutAwareDefaultViewSelectionView, self).vocab)
+            + [(term.value, term.title) for term in vocab]
         )

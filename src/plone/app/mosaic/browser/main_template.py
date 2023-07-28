@@ -13,8 +13,10 @@ from Products.CMFPlone.browser.interfaces import IMainTemplate
 from Products.Five import BrowserView
 from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
 from repoze.xmliter.utils import getHTMLSerializer
-from urlparse import unquote
-from urlparse import urljoin
+from six.moves import filter
+from six.moves import map
+from six.moves.urllib.parse import unquote
+from six.moves.urllib.parse import urljoin
 from zExceptions import NotFound
 from zope.component import getMultiAdapter
 from zope.interface import alsoProvides
@@ -24,15 +26,38 @@ import logging
 import os
 import pkg_resources
 import re
+import six
+
 
 NSMAP = {'metal': 'http://namespaces.zope.org/metal'}
 slotsXPath = etree.XPath("//*[@data-slots]")
 
 logger = logging.getLogger('plone.app.mosaic')
 
+TEMPLATE = """\
+<metal:page
+    define-macro="master"
+    tal:define="
+        portal_state context/@@plone_portal_state;
+        context_state context/@@plone_context_state;
+        plone_view context/@@plone;
+        plone_layout context/@@plone_layout;
+        lang portal_state/language;
+        view nocall: view | nocall: plone_view;
+        dummy python:plone_layout.mark_view(view);
+        portal_url portal_state/portal_url;
+        checkPermission nocall: context/portal_membership/checkPermission;
+        site_properties nocall: context/portal_properties/site_properties;
+        ajax_include_head request/ajax_include_head | nothing;
+        ajax_load request/ajax_load | python: False;
+        toolbar_class python:request.cookies.get('plone-toolbar', 'plone-toolbar-left pat-toolbar');
+        dummy python:request.RESPONSE.setHeader('X-UA-Compatible', 'IE=edge,chrome=1');">
+{0}
+</metal:page>"""  # noqa
+
 
 def cook_layout_cachekey(func, layout, ajax):
-    if isinstance(layout, unicode):
+    if isinstance(layout, six.text_type):
         layout = layout.encode('utf-8', 'replace')
     return md5(layout).hexdigest(), ajax
 
@@ -75,9 +100,9 @@ def parse_data_slots(value):
         prepends = children
         appends = ''
 
-    wrappers = filter(bool, map(str.strip, wrappers.split()))
-    prepends = filter(bool, map(str.strip, prepends.split()))
-    appends = filter(bool, map(str.strip, appends.split()))
+    wrappers = list(filter(bool, list(map(str.strip, wrappers.split()))))
+    prepends = list(filter(bool, list(map(str.strip, prepends.split()))))
+    appends = list(filter(bool, list(map(str.strip, appends.split()))))
 
     return wrappers, prepends, appends
 
@@ -86,7 +111,7 @@ def wrap_append_prepend_slots(node, data_slots):
     wrappers, prepends, appends = parse_data_slots(data_slots)
 
     for panelId in wrappers:
-        slot = etree.Element('{%s}%s' % (NSMAP['metal'], panelId),
+        slot = etree.Element('{{{0:s}}}{1:s}'.format(NSMAP['metal'], panelId),
                              nsmap=NSMAP)
         slot.attrib['define-slot'] = panelId
         slot_parent = node.getparent()
@@ -95,13 +120,13 @@ def wrap_append_prepend_slots(node, data_slots):
         slot_parent.insert(slot_parent_index, slot)
 
     for panelId in prepends:
-        slot = etree.Element('{%s}%s' % (NSMAP['metal'], panelId),
+        slot = etree.Element('{{{0:s}}}{1:s}'.format(NSMAP['metal'], panelId),
                              nsmap=NSMAP)
         slot.attrib['define-slot'] = panelId
         node.insert(0, slot)
 
     for panelId in appends:
-        slot = etree.Element('{%s}%s' % (NSMAP['metal'], panelId),
+        slot = etree.Element('{{{0:s}}}{1:s}'.format(NSMAP['metal'], panelId),
                              nsmap=NSMAP)
         slot.attrib['define-slot'] = panelId
         node.append(slot)
@@ -116,7 +141,7 @@ def cook_layout(layout, ajax):
     layout = re.sub('\r', '\n', re.sub('\r\n', '\n', layout))
 
     # Parse layout
-    if isinstance(layout, unicode):
+    if isinstance(layout, six.text_type):
         result = getHTMLSerializer([layout.encode('utf-8')], encoding='utf-8')
     else:
         result = getHTMLSerializer([layout], encoding='utf-8')
@@ -144,31 +169,18 @@ def cook_layout(layout, ajax):
     if not ajax and head is not None:
         for name in ['top_slot', 'head_slot',
                      'style_slot', 'javascript_head_slot']:
-            slot = etree.Element('{%s}%s' % (NSMAP['metal'], name),
+            slot = etree.Element('{{{0:s}}}{1:s}'.format(NSMAP['metal'], name),
                                  nsmap=NSMAP)
             slot.attrib['define-slot'] = name
             head.append(slot)
 
-    template = """\
-<metal:page define-macro="master"
-            tal:define="portal_state context/@@plone_portal_state;
-                        context_state context/@@plone_context_state;
-                        plone_view context/@@plone;
-                        plone_layout context/@@plone_layout | nothing;
-                        lang portal_state/language;
-                        view nocall: view | nocall: plone_view;
-                        dummy python:plone_view.mark_view(view);
-                        portal_url portal_state/portal_url;
-                        checkPermission nocall: context/portal_membership/checkPermission;
-                        site_properties nocall: context/portal_properties/site_properties;
-                        ajax_include_head request/ajax_include_head | nothing;
-                        ajax_load request/ajax_load | python: False;
-                        toolbar_class python:request.cookies.get('plone-toolbar', 'plone-toolbar-left pat-toolbar');
-                        dummy python:request.RESPONSE.setHeader('X-UA-Compatible', 'IE=edge,chrome=1');">
-%s
-</metal:page>"""
+    template = TEMPLATE
     metal = 'xmlns:metal="http://namespaces.zope.org/metal"'
-    return (template % ''.join(result)).replace(metal, '')
+
+    if six.PY2:
+        return (template.format(''.join(result)).replace(metal, ''))
+
+    return (template.format((b''.join(result).decode("utf-8"))).replace(metal, ''))
 
 
 class ViewPageTemplateString(ViewPageTemplateFile):
@@ -294,11 +306,11 @@ class MainTemplate(BrowserView):
         # Merge macros to provide fallback macros form legacy main_template
         macros = {}
         for template in [self.main_template, self.template]:
-            if hasattr(template.macros, 'names'):
+            try:
                 # Chameleon template macros
                 for name in template.macros.names:
                     macros[name] = template.macros[name]
-            else:
+            except AttributeError:
                 # Legacy template macros
                 for name, macro in template.macros.items():
                     macros[name] = Macro(macro)

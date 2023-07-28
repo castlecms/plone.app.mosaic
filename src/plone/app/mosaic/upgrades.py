@@ -3,6 +3,8 @@ from plone import api
 from plone.app.blocks.layoutbehavior import ILayoutAware
 from plone.app.mosaic.interfaces import IAction
 from plone.app.mosaic.setuphandlers import create_ttw_layout_examples
+from plone.app.mosaic.widget import LAYOUT_BEHAVIORS
+from plone.registry.field import ASCIILine
 from plone.registry.interfaces import IRegistry
 from Products.CMFCore.utils import getToolByName
 from zope.component import getUtility
@@ -34,9 +36,6 @@ def upgrade_4_to_5(context):
 
 
 def upgrade_5_to_6(context):
-    from plone.registry.interfaces import IRegistry
-    from zope.component import getUtility
-
     registry = getUtility(IRegistry)
     for key in tuple(registry.records):
         if key.startswith('plone.app.mosaic.format'):
@@ -56,9 +55,6 @@ def upgrade_6_to_7(context):
 
 
 def upgrade_7_to_8(context):
-    from plone.registry.interfaces import IRegistry
-    from zope.component import getUtility
-
     registry = getUtility(IRegistry)
     for key in tuple(registry.records):
         if key.startswith('plone.app.mosaic.tinymce'):
@@ -81,8 +77,7 @@ def upgrade_8_to_9(context):
     all_ftis = types_tool.listTypeInfo()
     dx_ftis = [x for x in all_ftis if getattr(x, 'behaviors', False)]
     for fti in dx_ftis:
-        behaviors = [i for i in fti.behaviors]
-        if 'plone.app.blocks.layoutbehavior.ILayoutAware' not in behaviors:
+        if not (LAYOUT_BEHAVIORS & set(fti.behaviors)):
             continue
 
         # Add Mosaic view into available view methods
@@ -110,8 +105,7 @@ def upgrade_9_to_10(context):
     all_ftis = types_tool.listTypeInfo()
     dx_ftis = [x for x in all_ftis if getattr(x, 'behaviors', False)]
     for fti in dx_ftis:
-        behaviors = [i for i in fti.behaviors]
-        if 'plone.app.blocks.layoutbehavior.ILayoutAware' not in behaviors:
+        if not (LAYOUT_BEHAVIORS & set(fti.behaviors)):
             continue
 
         results = pc.unrestrictedSearchResults(portal_type=fti.id)
@@ -166,5 +160,83 @@ def upgrade_to_1_0rc3(context):
 def upgrade_to_1_1(context):
     context.runImportStepFromProfile(
         PROFILE_ID.replace('default', 'to_5016'),
+        'plone.app.registry'
+    )
+
+
+def upgrade_to_2_0rc1(context):
+    catalog = api.portal.get_tool('portal_catalog')
+    for brain in catalog(object_provides=ILayoutAware.__identifier__):
+        obj = brain.getObject()
+        obj.reindexObject(idxs=['object_provides', 'layout'])
+
+    context.runImportStepFromProfile(
+        PROFILE_ID.replace('default', 'to_5017'),
+        'plone.app.registry'
+    )
+
+
+def upgrade_to_2_0rc3(context):
+    context.runImportStepFromProfile(
+        PROFILE_ID.replace('default', 'to_5018'),
+        'plone.app.registry'
+    )
+
+
+def upgrade_to_2_0rc4(context):
+    # Ensure that all default layout definitions are encoded ascii strings
+    registry = getUtility(IRegistry)
+    for key in tuple(registry.records):
+        if key.startswith('plone.app.blocks.default_layout'):
+            if isinstance(registry.records[key].field, ASCIILine):
+                continue
+
+            record = registry.records[key]
+            record.field = ASCIILine(
+                title=record.field.title,
+                description=record.field.description
+            )
+            record.value = str(record.value)
+    context.runImportStepFromProfile(
+        PROFILE_ID.replace('default', 'to_5019'),
+        'plone.app.registry'
+    )
+
+
+def upgrade_to_2_0rc5(context):
+    context.runImportStepFromProfile(
+        PROFILE_ID.replace('default', 'to_5020'),
+        'plone.app.registry'
+    )
+
+
+def upgrade_to_2_0rc6(context):
+    # Remove table contextmenu actions from default rich text tiles
+    # (they were originally assigned only for special table tile and
+    # were accidentally assigned to the default tiles when the default
+    # table tile was removed).
+    registry = getUtility(IRegistry)
+    keys = [
+        'plone.app.mosaic.widget_actions.plone_app_z3cform_widget_RichTextFieldWidget.actions',  # noqa
+        'plone.app.mosaic.app_tiles.plone_app_standardtiles_html.available_actions'  # noqa
+    ]
+    values = [
+        'contextmenu-tableprops',
+        'contextmenu-cell',
+        'contextmenu-row',
+        'contextmenu-column',
+    ]
+    for key in keys:
+        try:
+            value = [v for v in registry[key]
+                     if v not in values]
+            registry[key] = type(registry[key])(value)
+        except KeyError:
+            pass
+
+
+def add_fluid_row_styles(context):
+    context.runImportStepFromProfile(
+        PROFILE_ID.replace('default', 'to_5022'),
         'plone.app.registry'
     )

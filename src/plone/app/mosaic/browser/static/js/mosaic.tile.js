@@ -14,6 +14,9 @@ define([
 ], function($, logger, _, utils, Registry, TinyMCE, tinymce, Modal) {
   'use strict';
 
+  // so we don't get spammed with missing tile warnings
+  var _missing_tile_configs = [];
+
   var log = logger.getLogger('pat-mosaic');
 
   var _positionTimeout = 0;
@@ -25,7 +28,7 @@ define([
   var _positionActiveTinyMCE = function(){
     /* XXX warning, this needs to be split into a filter call for some reason.
        one selector bombs out */
-    var $toolbar = $('.mosaic-rich-text-toolbar').filter(':visible');
+    var $toolbar = $('.mosaic-selected-tile .mosaic-rich-text-toolbar').filter(':visible');
     if($toolbar.size() === 0 || $toolbar.find('.mce-first').size() === 0){
       /* make sure it actually has a toolbar */
       return;
@@ -44,7 +47,10 @@ define([
     // make the tiny toolbar sticky, it'll get shifted
     var $window = $(window);
 
-    if(($tile.offset().top - $toolbar.height()) < $window.scrollTop()){
+    // Will include the mosaic toolbar height
+    var mosaic_toolbar_height = $(".mosaic-toolbar").height();
+
+    if(($tile.offset().top - $toolbar.height()) < ($window.scrollTop() + mosaic_toolbar_height)){
       // just checking if we reached the top of the tile + size of toolbar
       if(!$toolbar.hasClass('sticky')){
         $('body').addClass('mce-sticky');
@@ -82,8 +88,8 @@ define([
     that.focusCheckCount = 0;
 
     that.$el.children(".mosaic-tile-content").off('blur').on('blur', function(){
-      var tiletype = that.getType();
-      if(tiletype === 'plone.app.standardtiles.rawhtml'){
+      var tile_config = that.getConfig();
+      if(tile_config && tile_config.tile_type === 'textapp'){
         var edit_url = that.getEditUrl();
         if(edit_url){
           var currentData = that.getHtmlContent();
@@ -96,18 +102,22 @@ define([
             return;
           }
           that.$el.data('activeSave', true);
+          var data = {
+            _authenticator: utils.getAuthenticator(),
+            'buttons.save': 'Save'
+          };
+          data[tile_config.name + '.content'] = currentData;
           // need to save tile
-          $.ajax({
-            url: edit_url,
-            method: 'POST',
-            data: {
-              'plone.app.standardtiles.rawhtml.content': currentData,
-              _authenticator: utils.getAuthenticator(),
-              'buttons.save': 'Save'
-            }
-          }).always(function(){
-            that.$el.data('lastSavedData', currentData);
-            that.$el.data('activeSave', false);
+          $.mosaic.queue(function(next){
+            $.ajax({
+              url: edit_url,
+              method: 'POST',
+              data: data
+            }).always(function(){
+              that.$el.data('lastSavedData', currentData);
+              that.$el.data('activeSave', false);
+              next();
+            });
           });
         }
       }
@@ -123,7 +133,18 @@ define([
   };
 
   Tile.prototype.getHtmlContent = function(){
-    return this.getContentEl().html();
+    var el = this.getContentEl();
+    var content;
+    if (el.hasClass("mosaic-rich-text")){
+      var editor = tinymce.get(el.attr('id'));
+      if (editor !== null){
+        content = editor.getContent();
+      }
+    }
+    if (content === undefined){
+      content = el.html();
+    }
+    return content;
   };
 
   Tile.prototype.getEditUrl = function(){
@@ -182,6 +203,10 @@ define([
       }else if(tile_url.indexOf('X-Tile-Persistent') !== -1){
         tile_url = tile_url.replace('X-Tile-Persistent=yes', '').replace('&&', '&');
       }
+      while(tile_url.indexOf('&_layouteditor=true') !== -1){
+        // clean out urls with _layouteditor in them
+        tile_url = tile_url.replace('&_layouteditor=true', '');
+      }
     }
     return tile_url;
   };
@@ -218,6 +243,15 @@ define([
 
     return tiletype;
   };
+
+  Tile.prototype.deprecatedHTMLTiles = [
+    'table',
+    'numbers',
+    'bullets',
+    'text',
+    'subheading',
+    'heading'
+  ];
 
   Tile.prototype.getConfig = function(){
     var tile_config;
@@ -261,23 +295,34 @@ define([
 
     if(!tile_config){
       // dive out of here, something went wrong finding tile config
-      log.error('Could not load tile config for tile type: ' + tiletype);
-      return;
+      if(_missing_tile_configs.indexOf(tiletype) === -1){
+        log.error('Could not load tile config for tile type: ' + tiletype +
+                  ' falling back to b/w compatible tile type.');
+        _missing_tile_configs.push(tiletype);
+      }
+      tile_config = {
+        tile_type: 'app',
+        name: tiletype,
+        label: 'Unknown',
+        read_only: true,
+        favorite: false,
+        settings: false,
+        weight: 0,
+        rich_text: false
+      };
+      if(this.deprecatedHTMLTiles.indexOf(tiletype) !== -1){
+        // deprecated html tile type, provide b/w compat config
+        tile_config.category = 'structure';
+        tile_config.read_only = false;
+        tile_config.label = tiletype;
+        tile_config.tile_type = 'text';
+        tile_config.rich_text = true;
+      }
     }
     return tile_config;
   };
 
-  Tile.prototype.getValueFromClasses = function(classes, name){
-    var value;
-    classes.forEach(function(className){
-      if(className.indexOf(name) !== -1){
-        value = className.replace(name, '');
-      }
-    });
-    return value;
-  },
-
-  Tile.prototype.getHtmlBody = function(){
+  Tile.prototype.getHtmlBody = function(exportLayout){
     var body = '';
     // Get tile type
     var tiletype = '',
@@ -299,21 +344,36 @@ define([
 
     // Get tile config
     var tile_config = this.getConfig();
+    var editor;
 
     // Predefine vars
     switch (tile_config.tile_type) {
       case "text":
+        editor = tinymce.get(this.$el.children(".mosaic-tile-content").attr('id'));
         body += '          <div class="' + classes.join(' ') + '">\n';
         body += '          <div class="mosaic-tile-content">\n';
-        body += this.$el.children(".mosaic-tile-content").html().replace(/^\s+|\s+$/g, '') + "\n";
+        body += (editor ? editor.getContent() : this.$el.children(".mosaic-tile-content").html()).replace(/^\s+|\s+$/g, '') + "\n";
         body += '          </div>\n';
         body += '          </div>\n';
         break;
       case "app":
       case "textapp":
+        var url = this.getUrl();
+        if(exportLayout){
+          // we want to provide default value here for exporting this layout
+          editor = tinymce.get(this.$el.children(".mosaic-tile-content").attr('id'));
+          var data = (editor ? editor.getContent() : this.$el.children(".mosaic-tile-content").html()).replace(/^\s+|\s+$/g, '') + "\n";
+          // convert to url valid value
+          if(url.indexOf('?') === -1){
+            url += '?';
+          }else{
+            url += '&';
+          }
+          url += 'content=' + encodeURI(data);
+        }
         body += '          <div class="' + classes.join(' ') + '">\n';
         body += '          <div class="mosaic-tile-content">\n';
-        body += '          <div data-tile="' + this.getUrl() + '"></div>\n';
+        body += '          <div data-tile="' + url + '"></div>\n';
         body += '          </div>\n';
         body += '          </div>\n';
         break;
@@ -324,7 +384,9 @@ define([
         // Calc url
         var tile_url = './@@plone.app.standardtiles.field?field=' + tiletype;
 
-        // check if subfield is in the class list
+        // ability to provide a few additional settings for field tiles
+        // can be useful in formatting field tiles in python
+        // subfield is meant for relation fields
         var subfield = this.getValueFromClasses(classes, 'mosaic-subfield-');
         if(subfield){
           tile_url += '&subfield=' + subfield;
@@ -486,7 +548,8 @@ define([
       var tile_config = this.getConfig();
 
       // Check if app tile
-      if (tile_config && tile_config.tile_type === 'app') {
+      if (tileConfig.tile_type === 'app' ||
+          tileConfig.tile_type === 'textapp') {
 
         // Get url
         var tile_url = this.getUrl();
@@ -496,13 +559,17 @@ define([
           $.mosaic.removeHeadTags(tile_url);
 
           // Ajax call to remove tile
-          $.ajax({
-            type: "POST",
-            url: this.getDeleteUrl(),
-            data: {
-              'buttons.delete': 'Delete',
-              '_authenticator': utils.getAuthenticator()
-            }
+          $.mosaic.queue(function(next){
+            $.ajax({
+              type: "POST",
+              url: self.getDeleteUrl(),
+              data: {
+                'buttons.delete': 'Delete',
+                '_authenticator': utils.getAuthenticator()
+              }
+            }).always(function(){
+              next();
+            });
           });
         }
       }
@@ -518,8 +585,6 @@ define([
 
       // Remove current tile
       this.$el.remove();
-
-      $.mosaic.undo.snapshot();
 
       // Cleanup original row
       $originalRow.mosaicCleanupRow();
@@ -604,6 +669,17 @@ define([
       }
     };
 
+    Tile.prototype.getValueFromClasses = function(classes, name){
+      var value;
+      classes.forEach(function(className){
+        if(className.indexOf(name) !== -1){
+          value = className.replace(name, '');
+        }
+      });
+      return value;
+    };
+
+
     Tile.prototype.initializeContent = function(){
       var that = this;
 
@@ -618,9 +694,6 @@ define([
 
       // Get tile type
       var tile_config = this.getConfig();
-      if(!tile_config){
-          return;
-      }
 
       // Check if a field tile
       if (tile_config.tile_type === 'field') {
@@ -678,17 +751,18 @@ define([
         that.$el.addClass('mosaic-tile-loading');
         url = base ? [base, href].join('/')
                                  .replace(/\/+\.\//g, '/') : href;
+        var original_url = url;
         // in case tile should be rendered differently for layout editor
+        if(url.indexOf('?') === -1){
+          url += '?';
+        }else{
+          url += '&';
+        }
         if(url.indexOf('_layouteditor') === -1){
-          if(url.indexOf('?') === -1){
-            url += '?';
-          }else if(url.charAt(url.length - 1) != '&') {
-            url += '&';
-          }
           url += '_layouteditor=true';
         }
         $.ajax({
-          type: "GET",
+          type: "POST",
           url: url,
           success: function (value) {
             that.$el.removeClass('mosaic-tile-loading');
@@ -699,10 +773,10 @@ define([
             // Add head tags
             $.mosaic.addHeadTags(href, value);
             var tileHtml = value.find('.temp_body_tag').html();
-            that.fillContent(tileHtml, url);
+            that.fillContent(tileHtml, original_url);
 
             var tiletype = that.getType();
-            if(tiletype === 'plone.app.standardtiles.rawhtml'){
+            if(tiletype === 'plone.app.standardtiles.html'){
               // a little gymnastics to make wysiwyg work here
               // Init rich editor
               if(!that.$el.data('lastSavedData')){
@@ -713,6 +787,9 @@ define([
           },
           error: function(){
             that.$el.removeClass('mosaic-tile-loading');
+            log.error('Error getting data for the tile ' + tile_config.label +
+                      '(' + tile_config.name + '). Please read documentation ' +
+                      'on how to correctly register tiles: https://pypi.python.org/pypi/plone.tiles');
           }
         });
       }
@@ -885,23 +962,15 @@ define([
             });
           }
           var val = $el.find('.mosaic-tile-content > *').text();
-          $("#" + tile_config.id).find('input').attr('value', val);
+          $("#" + tile_config.id).find('input').val(val);
           break;
         case "z3c.form.browser.textarea.TextAreaWidget":
         case "z3c.form.browser.textarea.TextAreaFieldWidget":
         case "z3c.form.browser.textlines.TextLinesWidget":
         case "z3c.form.browser.textlines.TextLinesFieldWidget":
           value = "";
-          if (tile_config.name === 'IDublinCore-description') {
-            newline = " ";  // otherwise Plone would replace \n with ''
-          } else {
-            newline = "\n";
-          }
           $('.mosaic-panel .mosaic-' + tiletype + '-tile', $.mosaic.document).find('.mosaic-tile-content > *').each(function () {
-            value += $(this).html()
-              .replace(/<br[^>]*>/ig, newline)
-              .replace("&nbsp;", "")
-              .replace(/^\s+|\s+$/g, '') + newline;
+            value += $(this).text();
           });
           value = value.replace(/^\s+|\s+$/g, '');
           $("#" + tile_config.id).find('textarea').val(value);
@@ -948,9 +1017,8 @@ define([
       var id = 'mosaic-rich-text-init-' + random_id;
       $content.attr('id', id);
       $content.siblings('.mosaic-rich-text-toolbar').remove();
-      var $editorContainer = $('<div class="mosaic-rich-text-toolbar"></div>')
-        .attr('id', $content.attr('id') + '-panel');
-      $content.before($editorContainer);
+      var $editorToolbar = $('<div class="mosaic-rich-text-toolbar" />').attr('id', id + '-toolbar');
+      $content.before($editorToolbar);
 
       // Build toolbar and contextmenu
       var actions, group, x, y,
@@ -958,6 +1026,12 @@ define([
 
       // Get tiletype
       var tiletype = that.getType();
+      if(this.deprecatedHTMLTiles.indexOf(tiletype) !== -1){
+        // these tiles are deprecated but we still need to be able to edit
+        // them... Yes this is a bit ugly but I think it is probably the best
+        // way right now.
+        tiletype = 'plone.app.standardtiles.html';
+      }
 
       // Get actions
       actions = $.mosaic.options.default_available_actions;
@@ -1024,77 +1098,86 @@ define([
         timeout = setTimeout(_placeholder, 100);
       };
 
+      var paste_as_text = $.mosaic.options.tinymce.tiny.paste_as_text || false;
+      if(toolbar.length === 0){
+        paste_as_text = true;
+      }
       // Init rich editor
       pattern = new TinyMCE($content, $.extend(
-        true, {}, $.mosaic.options.tinymce, { inline: false, tiny: {
-        body_id: id,
-        selector: "#" + id,
-        inline: true,
-        fixed_toolbar_container: '#' + $editorContainer.attr('id'),
-        theme_advanced_toolbar_align: "right",
-        menubar: false,
-        toolbar: toolbar.join(' ') || false,
-        statusbar: false,
-        contextmenu: cmenu.join(' ') || false,
-        plugins: $.mosaic.options.tinymce.tiny.plugins.concat(
-          cmenu.length ? ['contextmenu'] : []
-        ),
-        setup: function(editor) {
-          that.tinymce = editor;
-          editor.on('focus', function(e) {
-            if (e.target.id) {
-              if($('.mosaic-helper-tile').length === 0){
-                that.select();
-                positionActiveTinyMCE();
-              }else{
-                // XXX this is such a hack..
-                // SOMETHING is causing tinymce to focus *after* it has been blurred
-                // from dragging. It's a weird state where it think it is focused
-                // but it's dragging. This fixes it, sort of. Sometimes you can
-                // still detect a flicker when the modes are switching
-                setTimeout(function(){
-                  $('.mce-edit-focus').each(function(){
-                    var tile = new Tile($(this).parent());
-                    tile.blur();
-                    var tiny = window.tinyMCE.get(this.getAttribute('id'));
-                    if(tiny){
-                      tiny.hide();
-                    }
-                  });
-                }, 10);
-              }
-            }
-          });
+        true, {}, $.mosaic.options.tinymce, {
+          inline: false,
+          tiny: {
+            body_id: id,
+            selector: "#" + id,
+            inline: true,
+            paste_as_text: paste_as_text,
+            fixed_toolbar_container: '#' + $editorToolbar.attr('id'),
+            ui_container: '#' + $editorToolbar.attr('id'),
+            theme_advanced_toolbar_align: "right",
+            menubar: false,
+            toolbar: toolbar.join(' ') || false,
+            statusbar: false,
+            contextmenu: cmenu.join(' ') || false,
+            plugins: $.mosaic.options.tinymce.tiny.plugins.concat(
+              cmenu.length ? ['contextmenu'] : []
+            ),
+            setup: function(editor) {
+              that.tinymce = editor;
+              editor.on('focus', function(e) {
+                if (e.target.id) {
+                  if($('.mosaic-helper-tile').length === 0){
+                    that.select();
+                    positionActiveTinyMCE();
+                  }else{
+                    // XXX this is such a hack..
+                    // SOMETHING is causing tinymce to focus *after* it has been blurred
+                    // from dragging. It's a weird state where it think it is focused
+                    // but it's dragging. This fixes it, sort of. Sometimes you can
+                    // still detect a flicker when the modes are switching
+                    setTimeout(function(){
+                      $('.mce-edit-focus').each(function(){
+                        var tile = new Tile($(this).parent());
+                        tile.blur();
+                        var tiny = window.tinyMCE.get(this.getAttribute('id'));
+                        if(tiny){
+                          tiny.hide();
+                        }
+                      });
+                    }, 10);
+                  }
+                }
+              });
 
-          if(toolbar.length === 0){
-            editor.on('keydown', function(e){
-              if(e.keyCode === 13){
-                e.preventDefault();
-                return;
+              if(toolbar.length === 0){
+                editor.on('keydown', function(e){
+                  if(e.keyCode === 13){
+                    e.preventDefault();
+                    return;
+                  }
+                });
               }
-            });
+
+              // `change` event doesn't fire all the time so we do both here...
+              editor.on('keyup change', placeholder);
+              placeholder();
+
+              editor.on('init', function(){
+                /*
+                  since focusing on a rich text tile before tinymce is initialized
+                  can cause some very weird issues where the toolbar won't show,
+                  we need to delay focus on rich text tiles
+                */
+                that.$el.data('tinymce-loaded', true);
+                if(that.$el.data('delayed-focus') === true){
+                  that.$el.data('delayed-focus', false);
+                  setTimeout(function(){
+                    that._focus();
+                  }, 100);
+                }
+              });
+            }
           }
-
-          // `change` event doesn't fire all the time so we do both here...
-          editor.on('keyup change', placeholder);
-          placeholder();
-
-          editor.on('init', function(){
-            /*
-              since focusing on a rich text tile before tinymce is initialized
-              can cause some very weird issues where the toolbar won't show,
-              we need to delay focus on rich text tiles
-            */
-            that.$el.data('tinymce-loaded', true);
-            if(that.$el.data('delayed-focus') === true){
-              that.$el.data('delayed-focus', false);
-              setTimeout(function(){
-                that._focus();
-              }, 100);
-            }
-          });
-        }
-      }}));
+        }));
 
       // Set editor class
       $content.addClass('mosaic-rich-text');

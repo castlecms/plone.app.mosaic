@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
+from AccessControl import getSecurityManager
 from plone import api
 from plone.app.blocks.layoutbehavior import ILayoutAware
+from plone.app.blocks.layoutbehavior import ILayoutBehaviorAdaptable
 from plone.app.mosaic.interfaces import IMosaicLayer
 from plone.app.mosaic.interfaces import IMosaicRegistryAdapter
 from plone.app.mosaic.utils import getContentLayoutsForType
@@ -26,10 +28,16 @@ from zope.component import adapter
 from zope.component import queryUtility
 from zope.interface import implementer
 from zope.interface import implementer_only
-from zope.security import checkPermission
 
 
 LAYOUT_VIEWS = ['layout_view', '@@layout_view']
+
+LAYOUT_BEHAVIORS = {
+    'plone.app.blocks.layoutbehavior.ILayoutAware',
+    'plone.layoutaware',
+}
+
+FORMS_BLACKLIST = ['babel_edit']
 
 
 class ILayoutWidget(ITextAreaWidget):
@@ -48,11 +56,20 @@ class LayoutWidget(BaseWidget, TextAreaWidget):
     @property
     @memoize
     def enabled(self):
+        # Disable Mosaic editor on unexpected view names
+        if self._form_name() in FORMS_BLACKLIST:
+            return False
+
+        # Disable Mosaic editor when the form has a status message,
+        # because the Mosaic editor is currently unable to properly show
+        # validation errors
+        if self._form_status():
+            return False
         # Disable Mosaic editor when the selected layout for the current
         # ILayoutAware or DX add form context is not custom layout
         current_browser_layout = (
-            self._add_form_portal_type_default_view() or
-            self._context_selected_layout()
+            self._add_form_portal_type_default_view()
+            or self._context_selected_layout()
         )
         return current_browser_layout in LAYOUT_VIEWS
 
@@ -66,8 +83,10 @@ class LayoutWidget(BaseWidget, TextAreaWidget):
             return getattr(getattr(
                 self.form, '__parent__', self.form), 'portal_type', None)
         else:
-            if hasattr(self.context, 'portal_type'):
+            try:
                 return self.context.portal_type
+            except AttributeError:
+                pass
         return None
 
     def get_options(self):
@@ -81,8 +100,14 @@ class LayoutWidget(BaseWidget, TextAreaWidget):
         }
         result = adapted(**kwargs)
 
-        result['canChangeLayout'] = checkPermission(
-            'plone.CustomizeContentLayouts', self.context)
+        sm = getSecurityManager()
+
+        result['canChangeLayout'] = sm.checkPermission(
+            'Plone: Customize Content Layouts', self.context)
+        # This is a site permission...
+        # you can either manage layouts globally or not
+        result['canManageLayouts'] = sm.checkPermission(
+            'Plone: Manage Content Layouts', api.portal.get())
         result['context_url'] = self.context.absolute_url()
         result['tinymce'] = get_tinymce_options(
             self.context,
@@ -100,17 +125,17 @@ class LayoutWidget(BaseWidget, TextAreaWidget):
             self.name.replace(
                 '.', '-'
             ).replace(
-                '-content', '-contentLayout'
+                '-customContentLayout', '-contentLayout'
             )
         )
         result['customContentLayout_field_selector'] = '[name="{0:s}"]'.format(
             self.name
         )
         result['contentLayout_field_selector'] = '[name="{0:s}"]'.format(
-            self.name.replace('.content', '.contentLayout')
+            self.name.replace('.customContentLayout', '.contentLayout')
         )
 
-        result['available_layouts'] = getContentLayoutsForType(pt)
+        result['available_layouts'] = getContentLayoutsForType(pt, self.context)  # noqa
         result['user_layouts'] = getUserContentLayoutsForType(pt)
 
         return {'data': result}
@@ -159,7 +184,8 @@ class LayoutWidget(BaseWidget, TextAreaWidget):
             return ''
 
         behaviors = getattr(fti, 'behaviors', None) or []
-        if 'plone.app.blocks.layoutbehavior.ILayoutAware' not in behaviors:
+
+        if not (LAYOUT_BEHAVIORS & set(behaviors)):
             return ''
 
         return fti.default_view
@@ -175,15 +201,39 @@ class LayoutWidget(BaseWidget, TextAreaWidget):
             return ''
         return selectable_layout.getLayout()
 
+    def _form_name(self):
+        """Return the view name of the underlying form"""
+        try:
+            return self.form._parent.__name__
+        except AttributeError:
+            pass
+        try:
+            return self.form.__name__
+        except AttributeError:
+            pass
+        return u''
 
-@adapter(getSpecification(ILayoutAware['content']), IMosaicLayer)
+    def _form_status(self):
+        """Return the current status message of the underlying form"""
+        try:
+            return self.form._parent.status
+        except AttributeError:
+            pass
+        try:
+            return self.form.status
+        except AttributeError:
+            pass
+        return u''
+
+
+@adapter(getSpecification(ILayoutAware['customContentLayout']), IMosaicLayer)
 @implementer(IFieldWidget)
 def LayoutFieldWidget(field, request):  # noqa
     return FieldWidget(field, LayoutWidget(request))
 
 
 @implementer(IFormExtender)
-@adapter(ILayoutAware, IMosaicLayer, DexterityExtensibleForm)
+@adapter(ILayoutBehaviorAdaptable, IMosaicLayer, DexterityExtensibleForm)
 class HideSiteLayoutFields(FormExtender):
 
     def update(self):

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-from ConfigParser import SafeConfigParser
+from AccessControl import getSecurityManager
+from AccessControl import Unauthorized
 from plone import api
 from plone.app.blocks.interfaces import CONTENT_LAYOUT_MANIFEST_FORMAT
 from plone.app.blocks.interfaces import CONTENT_LAYOUT_RESOURCE_NAME
@@ -13,17 +14,24 @@ from plone.protect.authenticator import createToken
 from plone.registry.interfaces import IRegistry
 from plone.resource.manifest import MANIFEST_FILENAME
 from plone.resource.utils import queryResourceDirectory
+from six.moves.configparser import ConfigParser
 from zExceptions import NotFound
 from zope.component import getUtility
 from zope.publisher.browser import BrowserView
 
-import io
 import json
+import six
 
 
 def loadManifest(data):
-    parser = SafeConfigParser(None, multidict)
-    parser.readfp(io.BytesIO(data))
+    if six.PY2:
+        parser = ConfigParser(None, multidict)
+        parser.readfp(six.StringIO(data))
+    else:
+        if isinstance(data, six.binary_type):
+            data = data.decode()
+        parser = ConfigParser(dict_type=multidict, strict=False)
+        parser.read_string(data)
     return parser
 
 
@@ -63,9 +71,22 @@ class ManageLayoutView(BrowserView):
     def deletelayout(self):
         layout_resources = queryResourceDirectory(
             CONTENT_LAYOUT_RESOURCE_NAME, 'custom')
+        layout_path = self.request.form.get('layout')
+
+        if len(layout_path.split('/')) <= 2:
+            sm = getSecurityManager()
+            # this is a global layout, need to check permissions
+            if not sm.checkPermission('Plone: Manage Content Layouts',
+                                      api.portal.get()):
+                raise Unauthorized("User not allowed to delete global layout")
+        else:
+            # check this user is allowed to delete this template
+            user_dir = 'custom/user-layouts/{0:s}'.format(
+                api.user.get_current().getId())
+            if not layout_path.startswith(user_dir):
+                raise Unauthorized("You are not allowed to delete this layout")
 
         # find directory
-        layout_path = self.request.form.get('layout')
         filename = layout_path.split('/')[-1]
         directory = layout_resources
         for part in layout_path.replace('custom/', '').split('/')[:-1]:
@@ -97,7 +118,8 @@ class ManageLayoutView(BrowserView):
                     self.context.portal_type
                 ),
                 'available_layouts': getContentLayoutsForType(
-                    self.context.portal_type
+                    self.context.portal_type,
+                    self.context
                 )
             }
         )
@@ -122,6 +144,9 @@ class ManageLayoutView(BrowserView):
     def save(self):
         form = self.request.form
 
+        if not form['name']:
+            raise Exception("You must provide a layout name")
+
         layout_dir_name = 'custom'
         layout_resources = queryResourceDirectory(
             CONTENT_LAYOUT_RESOURCE_NAME, layout_dir_name)
@@ -141,6 +166,13 @@ class ManageLayoutView(BrowserView):
                 user_directory = users_directory[user_id]
             layout_dir_name = 'custom/user-layouts/' + user_id
             layout_resources = user_directory
+        else:
+            # user needs plone.ManageContentLayouts permission to make
+            # global layouts
+            sm = getSecurityManager()
+            if not sm.checkPermission('Plone: Manage Content Layouts',
+                                      api.portal.get()):
+                raise Unauthorized("User not allowed to create global layout")
 
         normalizer = getUtility(IIDNormalizer)
         layout_filename = normalizer.normalize(form['name']) + '.html'
@@ -183,7 +215,8 @@ class ManageLayoutView(BrowserView):
                     self.context.portal_type
                 ),
                 'available_layouts': getContentLayoutsForType(
-                    self.context.portal_type
+                    self.context.portal_type,
+                    self.context
                 )
             }
         )
@@ -217,7 +250,7 @@ class LayoutsEditor(BrowserView):
         hidden = registry['plone.app.mosaic.hidden_content_layouts']
         key = self.request.form.get('layout')
         if key and key not in hidden:
-            hidden.append(unicode(key))
+            hidden.append(six.text_type(key))
             registry['plone.app.mosaic.hidden_content_layouts'] = hidden
 
     def get_layout_id(self, layout):

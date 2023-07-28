@@ -8,16 +8,12 @@
       name="default"
       type="sitelayout"
       zcml:condition="have mosaic-sitelayouts"
-  />
-  <plone:static
-      directory="layouts/bs3demo"
-      name="bs3demo"
-      type="sitelayout"
-      zcml:condition="have mosaic-sitelayouts"
-  />
+      />
+
   <plone:static
       directory="layouts/content"
       name="default"
       type="contentlayout"
-  />
+      />
+
 </configure>

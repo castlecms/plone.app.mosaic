@@ -4,7 +4,8 @@ from plone.app.mosaic.testing import PLONE_APP_MOSAIC_INTEGRATION
 from plone.app.mosaic.widget import LayoutWidget
 from z3c.form.interfaces import IFieldWidget
 from zope.component import getMultiAdapter
-import unittest2 as unittest
+
+import unittest
 
 
 class TestLayoutWidget(unittest.TestCase):
@@ -14,6 +15,8 @@ class TestLayoutWidget(unittest.TestCase):
         self.request = self.layer['request']
 
     def test_layout_widget_is_registered_for_layer(self):
-        widget = getMultiAdapter((ILayoutAware['content'], self.request),
-                                  IFieldWidget)
+        widget = getMultiAdapter(
+            (ILayoutAware['customContentLayout'], self.request),
+            IFieldWidget
+        )
         self.assertIsInstance(widget, LayoutWidget)

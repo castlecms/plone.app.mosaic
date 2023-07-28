@@ -14,11 +14,22 @@
   <genericsetup:registerProfile
       name="default"
       title="Mosaic"
-      description="Installs Mosaic layout support for Plone"
+      description="Installs Mosaic layout support."
       directory="profiles/default"
       provides="Products.GenericSetup.interfaces.EXTENSION"
       post_handler="plone.app.mosaic.setuphandlers.post_handler"
       />
+
+  <genericsetup:registerProfile
+      name="uninstall"
+      title="plone.app.mosaic:uninstall"
+      directory="profiles/uninstall"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      />
+
+  <utility
+      factory=".setuphandlers.HiddenProfiles"
+      name="plone.app.mosaic-hiddenprofiles" />
 
   <!-- View method auto-enabler -->
   <subscriber
@@ -41,35 +52,84 @@
       zcml:condition="not-have mosaic-sitelayouts"
       />
 
+
+  <!-- customize default dexterity add form -->
+  <adapter
+      for="Products.CMFCore.interfaces.IFolderish
+           .interfaces.IMosaicLayer
+           plone.dexterity.interfaces.IDexterityFTI"
+      provides="zope.publisher.interfaces.browser.IBrowserPage"
+      factory=".forms.MosaicDefaultAddView"
+      />
+  <class class=".forms.MosaicDefaultAddView">
+      <require
+          permission="cmf.AddPortalContent"
+          interface="zope.publisher.interfaces.browser.IBrowserPage"
+          />
+  </class>
+
   <!-- HTTPHeaders transform, because main_template may not be rendered -->
   <adapter
-      for="* .interfaces.IMosaicLayer"
+      for="*
+           plone.app.blocks.interfaces.IBlocksTransformEnabled"
+      name="plone.app.mosaic.httpheaders"
+      factory=".transform.HTTPHeaders"
+      />
+  <adapter
+      for="plone.app.blocks.interfaces.IBlocksTransformEnabled
+           .interfaces.IMosaicLayer"
       name="plone.app.mosaic.httpheaders"
       factory=".transform.HTTPHeaders"
       />
 
   <!-- HTML language transform to fix language attribute in site layout -->
   <adapter
-      for="* .interfaces.IMosaicLayer"
+      for="*
+           plone.app.blocks.interfaces.IBlocksTransformEnabled"
+      name="plone.app.mosaic.language"
+      factory=".transform.HTMLLanguage"
+      />
+  <adapter
+      for="plone.app.blocks.interfaces.IBlocksTransformEnabled
+           .interfaces.IMosaicLayer"
       name="plone.app.mosaic.language"
       factory=".transform.HTMLLanguage"
       />
 
   <!-- Body class transform to add traditional Plone body class -->
   <adapter
-      for="* .interfaces.IMosaicLayer"
+      for="*
+           plone.app.blocks.interfaces.IBlocksTransformEnabled"
+      name="plone.app.mosaic.bodyclass"
+      factory=".transform.BodyClass"
+      />
+  <adapter
+      for="plone.app.blocks.interfaces.IBlocksTransformEnabled
+           .interfaces.IMosaicLayer"
       name="plone.app.mosaic.bodyclass"
       factory=".transform.BodyClass"
       />
 
   <!-- Body data-pat-* transform to pattern settings -->
   <adapter
-      for="* .interfaces.IMosaicLayer"
+      for="*
+           plone.app.blocks.interfaces.IBlocksTransformEnabled"
+      name="plone.app.mosaic.patternsettings"
+      factory=".transform.PatternSettings"
+      />
+  <adapter
+      for="plone.app.blocks.interfaces.IBlocksTransformEnabled
+           .interfaces.IMosaicLayer"
       name="plone.app.mosaic.patternsettings"
       factory=".transform.PatternSettings"
       />
 
-  <adapter name="layout" factory=".index.get_layout" />
+  <adapter
+      for="*
+           .interfaces.IMosaicLayer"
+      name="layout"
+      factory=".layoutpolicy.MosaicBodyClasses"
+      />
 
   <include package=".browser" />
 

@@ -437,10 +437,8 @@ define([
         // Show option groups
         obj.find(".mosaic-option-group").show();
 
-        // Hide all actions
+        // Hide all actions (but not complete menus)
         obj.find(".mosaic-button").hide();
-        obj.find(".mosaic-menu").hide();
-        obj.find(".mosaic-icon-menu").hide();
         obj.find(".mosaic-menu-format").find(".mosaic-option")
           .hide()
           .attr("disabled", "disabled");
@@ -458,7 +456,7 @@ define([
           }
           obj.find(".mosaic-button-" + val).show();
           obj.find(".mosaic-icon-menu-" + val).show();
-          obj.find(".mosaic-menu-" + val).show();
+          obj.find(".select2-container.mosaic-menu-" + val).show();
           obj.find(".mosaic-option-" + val)
             .show()
             .removeAttr("disabled");
@@ -467,7 +465,7 @@ define([
           $('.mosaic-button-layout').show();
         }
 
-        // Set available fields
+        // Disable used field tiles
         obj.find(".mosaic-menu-insert")
           .children(".mosaic-option-group-fields")
           .children().each(function () {
@@ -483,14 +481,6 @@ define([
         // Hide option group if no visible items
         obj.find(".mosaic-option-group").each(function () {
           if ($(this).children(":enabled").length === 0) {
-            $(this).hide();
-          }
-        });
-
-        // Hide menu if no enabled items
-        $(".mosaic-menu, .mosaic-icon-menu",
-          $.mosaic.document).each(function () {
-          if ($(this).find(".mosaic-option:enabled").length === 1) {
             $(this).hide();
           }
         });
@@ -522,14 +512,15 @@ define([
       var lastChange = (new Date()).getTime();
       $(this).on('selectedtilechange', function () {
         if ($.mosaic.overlay.app) { return; }
+        if ($.mosaic.saving) { return; }  // skip when saving
+        if ($.mosaic.modal) { return; }  // skip when there's modal
         if ((new Date()).getTime() - lastChange > 6000) {
-          $.mosaic.saveLayoutToForm();
-          setTimeout(function(){
-            // we want to do this on a delay to prevent conflict errors when
-            // editing a tile and this is called at the exact same time
-            $("#form-widgets-ILayoutAware-content, " +
-              "[name='form.widgets.ILayoutAware.content']").blur();
-          }, 1000);
+          $.mosaic.queue(function(next){
+            $.mosaic.saveLayoutToForm();
+            $("#form-widgets-ILayoutAware-customContentLayout, " +
+              "[name='form.widgets.ILayoutAware.customContentLayout']").blur();
+            next();
+          });
           lastChange = (new Date()).getTime();
         }
       });

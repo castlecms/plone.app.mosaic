@@ -54,6 +54,10 @@ define([
   // Set variables
   $.mosaic.loaded = false;
 
+  // Define mosaic saving
+  $.mosaic.saving = false;
+
+  // Define UI templates
   $.mosaic.selectLayoutTemplate = _.template('<div>' +
     '<h1>Select Layout</h1>' +
     '<div class="mosaic-select-layout">' +
@@ -65,7 +69,9 @@ define([
               'screenshot = "++plone++mosaic/img/default-layout-screenshot.png";' +
             '} %>' +
             '<li><a href="#" data-value="<%- layout.path %>">' +
-              '<p><%- layout.title %></p><img src="<%- portal_url %>/<%- screenshot %>"></a></li>' +
+              '<p><%- layout.title %></p>' +
+              '<p class="mosaic-select-layout-description"><%- layout.description %></p>' +
+              '<img src="<%- portal_url %>/<%- screenshot %>"></a></li>' +
           '<% }); %>' +
         '</ul>' +
       '</div>' +
@@ -84,8 +90,8 @@ define([
           '</ul>' +
         '</div>' +
       '<% } %>' +
-      '<% if(hasCustomLayouts) { %>' +
-        '<p class="manage-custom-layouts"><a href="#">Manage custom layouts</a></p>' +
+      '<% if(hasCustomLayouts && canChangeLayout) { %>' +
+        '<p class="manage-custom-layouts"><a href="#" class="plone-btn plone-btn-default">Manage custom layouts</a></p>' +
       '<% } %>' +
     '</div>' +
     '<div class="buttons">' +
@@ -102,15 +108,17 @@ define([
         '<label for="layoutNameField">Name</label>' +
         '<input type="text" name="name" class="form-control" id="layoutNameField" />' +
       '</div>' +
-      '<div class="field form-group">' +
-        '<span class="option">' +
-          '<input id="globalLayout" type="checkbox">' +
-          '<label for="globalLayout">' +
-            '<span class="label">Global</span>' +
-          '</label>' +
-        '</span>' +
-        '<div class="formHelp">Should this layout be available for all users on the site?</div>' +
-      '</div>' +
+      '<% if(canManageLayouts){ %>' +
+        '<div class="field form-group">' +
+          '<span class="option">' +
+            '<input id="globalLayout" type="checkbox">' +
+            '<label for="globalLayout">' +
+              '<span class="label">Global</span>' +
+            '</label>' +
+          '</span>' +
+          '<div class="formHelp">Should this layout be available for all users on the site?</div>' +
+        '</div>' +
+      '<% } %>' +
     '</div>' +
     '<div class="buttons">' +
       '<button class="plone-btn plone-btn-primary">Save</button>' +
@@ -131,12 +139,16 @@ define([
         '<tbody>' +
           '<% _.each(available_layouts.concat(user_layouts), function(layout){ %>' +
             '<% if(layout.path.indexOf("custom/") !== -1){ %>' +
-              '<tr>' +
-                '<td><%- layout.title %></td>' +
-                '<td><%- layout.path %></td>' +
-                '<td><a href="#" class="btn btn-danger delete-layout" ' +
-                        'data-layout="<%- layout.path %>">Delete</a></td>' +
-              '</tr>' +
+              '<% if(layout.path.split("/").length > 2 || canManageLayouts) { %>' +
+                '<tr>' +
+                  '<td><%- layout.title %></td>' +
+                  '<td><%- layout.path %></td>' +
+                  '<td>' +
+                    '<a href="#" class="btn btn-danger delete-layout" ' +
+                        'data-layout="<%- layout.path %>">Delete</a>' +
+                  '</td>' +
+                '</tr>' +
+              '<% } %>' +
             '<% } %>' +
           '<% }); %>' +
         '</tbody>' +
@@ -166,7 +178,7 @@ define([
           '<label for="layoutField">Replacement Layout</label>' +
           '<select name="layout" class="form-control" id="layoutField">' +
             '<% _.each(available_layouts.concat(user_layouts), function(l){ %>' +
-              '<% if(l.path !== layout.path){ %>' +
+              '<% if(l.path !== layout_deleting.path){ %>' +
                 '<option value="<%- l.path %>"><%- l.title %></option>' +
               '<% } %>' +
             '<% }); %>' +
@@ -190,9 +202,7 @@ define([
       return;
     }
     $.mosaic.loaded = true;
-
-    // Take first snapshot
-    $.mosaic.undo.snapshot();
+    utils.loading.hide();
   };
 
   /**
@@ -341,7 +351,8 @@ define([
       obj = $(this);
 
       // Check if block element
-      if (obj.css('display') === 'block') {
+      if (obj.css('display') === 'block' ||
+          obj.css('display') === 'flex') {
 
         // Check if panel or toolbar
         if (!obj.hasClass('mosaic-panel') &&
@@ -373,11 +384,15 @@ define([
       }
     });
 
-    // Init upload
-    // $.mosaic.initUpload();
-    $.mosaic.undo.init();
-
-    $('body').addClass('mosaic-enabled');
+    // on enabling, add class, disable toolbar classes, hide toolbar
+    $('.pat-toolbar').hide();
+    var $body = $('body');
+    $body.addClass('mosaic-enabled');
+    $body[0].className.split(' ').forEach(function(className){
+      if(className.indexOf('plone-toolbar') !== -1){
+        $body.removeClass(className);
+      }
+    });
 
     $.mosaic.initialized();
   };
@@ -428,7 +443,7 @@ define([
     var modal = new Modal($el, {
       html: $.mosaic.deleteLayoutTemplate($.extend({}, true, {
         existing: existing,
-        layout: layout,
+        layout_deleting: layout,
         selected: $.mosaic.getSelectedContentLayout() === '++contentlayout++' + layout.path
       }, $.mosaic.options)),
       content: null,
@@ -576,10 +591,15 @@ define([
     });
     modal.on('shown', function() {
       $('.plone-btn:visible', modal.$modal).off('click').on('click', function(e){
+        var layoutName = $('#layoutNameField', modal.$modal).val();
+        if(!layoutName){
+          return;
+        }
         utils.loading.show();
         e.preventDefault();
         var globalLayout = 'false';
-        if($('#globalLayout', modal.$modal)[0].checked){
+        var $el = $('#globalLayout', modal.$modal);
+        if($el.size() > 0 && $el[0].checked){
           globalLayout = 'true';
         }
         $.ajax({
@@ -589,8 +609,8 @@ define([
             action: 'save',
             _authenticator: utils.getAuthenticator(),
             global: globalLayout,
-            name: $('#layoutNameField', modal.$modal).val(),
-            layout: $.mosaic.getPageContent()
+            name: layoutName,
+            layout: $.mosaic.getPageContent(true)
           }
         }).done(function(result){
           if(result.success){
@@ -697,4 +717,29 @@ define([
       $('head', $.mosaic.document).append(this);
     });
   };
+
+  /**
+   * Queue callback to be executed in serial to other queued
+   * functions
+   *
+   * Each callback should end its execution by calling the
+   * callback it gets as in
+   *
+   *   $.mosaic.queue(function(next) {
+   *     next();
+   *   })
+   *
+   * to allow execution of the next item in queue.
+   *
+   * @param {queueName} optional queue name
+   * @param {callback} callback fn to be called
+   */
+  $.mosaic.queue = function (queueName, callback) {
+    if (typeof callback === 'undefined') {
+        callback = queueName;
+        queueName = 'fx';  // 'fx' autoexecutes by default
+    }
+    $(window).queue(queueName, callback);
+  };
+
 });

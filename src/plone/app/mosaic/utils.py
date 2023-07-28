@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from AccessControl.security import checkPermission
 from plone.app.blocks.interfaces import CONTENT_LAYOUT_MANIFEST_FORMAT
 from plone.app.blocks.interfaces import CONTENT_LAYOUT_RESOURCE_NAME
 from plone.app.blocks.interfaces import IOmittedField
@@ -30,6 +31,13 @@ from zope.interface import Interface
 from zope.schema.interfaces import IField
 
 import os
+import six
+
+
+WIDGET_NAMES_MAP = {
+    'plone.app.z3cform.widget.RichTextWidget':
+    'plone.app.z3cform.widget.RichTextFieldWidget'
+}
 
 
 def _getWidgetName(field, widgets, request):
@@ -37,13 +45,15 @@ def _getWidgetName(field, widgets, request):
         factory = widgets[field.__name__]
     else:
         factory = getMultiAdapter((field, request), IFieldWidget)
-    if isinstance(factory, basestring):
-        return factory
-    elif isinstance(factory, ParameterizedWidget):
-        factory = factory.widget_factory
-    elif not isinstance(factory, type):
-        factory = factory.__class__
-    return '%s.%s' % (factory.__module__, factory.__name__)
+    if isinstance(factory, six.text_type):
+        name = factory
+    else:
+        if isinstance(factory, ParameterizedWidget):
+            factory = factory.widget_factory
+        elif not isinstance(factory, type):
+            factory = factory.__class__
+        name = '{0:s}.{1:s}'.format(factory.__module__, factory.__name__)
+    return WIDGET_NAMES_MAP.get(name, name)
 
 
 def getPersistentResourceDirectory(id_, container=None):
@@ -90,7 +100,7 @@ def extractFieldInformation(schema, context, request, prefix):
                 continue
             if not IOmittedField.providedBy(field):
                 yield {
-                    'id': "%s.%s" % (schema.__identifier__, name),
+                    'id': '{0:s}.{1:s}'.format(schema.__identifier__, name),
                     'name': prefix + name,
                     'title': schema[name].title,
                     'widget': _getWidgetName(schema[name], widgets, request),
@@ -98,7 +108,7 @@ def extractFieldInformation(schema, context, request, prefix):
                 }
 
 
-def getContentLayoutsForType(pt):
+def getContentLayoutsForType(pt, context=None):
     result = []
     registry = getUtility(IRegistry)
     hidden = registry.get('plone.app.mosaic.hidden_content_layouts', [])[:]
@@ -123,6 +133,10 @@ def getContentLayoutsForType(pt):
                 [os.path.dirname(key), preview])
         value['path'] = key
         result.append(value)
+    if context is not None:
+        result = [value for value in result
+                  if not value.get('permission')
+                  or checkPermission(value.get('permission'), context)]
     result.sort(key=lambda l: l.get('sort_key', '') or l.get('title', ''))
     return result
 

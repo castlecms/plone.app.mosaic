@@ -5,25 +5,43 @@ from plone.app.blocks.utils import resolveResource
 from plone.app.mosaic.interfaces import IMosaicLayer
 from plone.app.mosaic.utils import getPersistentResourceDirectory
 from plone.resource.manifest import MANIFEST_FILENAME
-from StringIO import StringIO
+from Products.CMFPlone.interfaces import INonInstallable
 from zope.component import getUtility
 from zope.interface import alsoProvides
+from zope.interface import implementer
 from zope.schema.interfaces import IVocabularyFactory
 
 
-EXAMPLE_SITE_LAYOUT = """\
+EXAMPLE_SITE_LAYOUT = b"""\
 [sitelayout]
 title = Plone layout (Custom)
 description = Example site layout
 file = site.html
 """
 
-EXAMPLE_CONTENT_LAYOUT = """\
+EXAMPLE_CONTENT_LAYOUT = b"""\
 [contentlayout]
 title = Basic (Custom)
 description = Example content layout
 file = basic.html
 """
+
+
+@implementer(INonInstallable)
+class HiddenProfiles(object):
+
+    def getNonInstallableProfiles(self):
+        """Hide uninstall profile from site-creation and quickinstaller"""
+        return [
+            # in any case we got an uninstall, here we hide it
+            'plone.app.mosaic:uninstall',
+            # and lets hide our dependencies as well.
+            'plone.app.drafts:default',
+            'plone.app.blocks:default',
+            'plone.app.standardtiles:default',
+            'plone.app.tiles:default',
+            'plone.formwidget.querystring:default',
+        ]
 
 
 def post_handler(context):
@@ -36,14 +54,10 @@ def create_ttw_site_layout_examples(portal):
     alsoProvides(request, IMosaicLayer)
     sitelayout = getPersistentResourceDirectory(SITE_LAYOUT_RESOURCE_NAME)
     custom = getPersistentResourceDirectory('custom', sitelayout)
-    custom.writeFile(MANIFEST_FILENAME, StringIO(EXAMPLE_SITE_LAYOUT))
+    custom.writeFile(MANIFEST_FILENAME, EXAMPLE_SITE_LAYOUT)
     custom.writeFile(
         'site.html',
-        StringIO(
-            resolveResource(
-                '++sitelayout++default/default.html'
-            ).encode('utf-8')
-        )
+        resolveResource('++sitelayout++default/default.html').encode('utf-8'),
     )
 
 
@@ -54,14 +68,10 @@ def create_ttw_content_layout_examples(portal):
         CONTENT_LAYOUT_RESOURCE_NAME
     )
     custom = getPersistentResourceDirectory('custom', contentlayout)
-    custom.writeFile(MANIFEST_FILENAME, StringIO(EXAMPLE_CONTENT_LAYOUT))
+    custom.writeFile(MANIFEST_FILENAME, EXAMPLE_CONTENT_LAYOUT)
     custom.writeFile(
         'basic.html',
-        StringIO(
-            resolveResource(
-                '++contentlayout++default/basic.html'
-            ).encode('utf-8')
-        )
+        resolveResource('++contentlayout++default/basic.html').encode('utf-8'),
     )
 
 
