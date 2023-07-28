@@ -31,16 +31,6 @@
   }
 
   .mosaic-menu {
-<<<<<<< HEAD
-      &:extend(.form-control);
-      display: inline-block;
-      margin: 0 5px 0 0;
-      width: auto;
-      &.mosaic-menu-insert {
-          margin-right: 0;
-      }
-  }
-=======
     /* cannot extend from .form-control because of media selectors ... reuse definitions here */
     height: @input-height-base; // Make inputs at least the height of their button counterpart (base line-height + padding + border)
     padding: @padding-base-vertical @padding-base-horizontal;
@@ -93,7 +83,6 @@
     }
   }
 
->>>>>>> mosaic/master
   .mosaic-button-group {
     display: inline-block;
     position: relative;
@@ -162,46 +151,6 @@
     }
 }
 
-<<<<<<< HEAD
-/* Apply bootstrap styles for select2 menus */
-.mosaic-toolbar {
-  .mosaic-menu {
-    &.select2-container {
-      &:extend(.dropdown);
-      a.select2-choice {
-        &:extend(.btn);
-        &:extend(.btn-default);
-
-        border: 0;
-        padding: 0;
-        box-shadow: none;
-
-        .select2-arrow {
-          border: 0;
-          background: none;
-          b { &:extend(.caret); }
-        }
-      }
-
-      &:hover {
-        &:extend(.btn-default:hover);
-        a.select2-choice {
-          &:extend(.btn-default:hover);
-        }
-      }
-
-      &.select2-dropdown-open {
-        &:extend(.btn-default:active);
-        a.select2-choice{
-          &:extend(.btn-default:active);
-        }
-      }
-    }
-  }
-}
-
-=======
->>>>>>> mosaic/master
 /* Hide mosaic-menu labels with select2 */
 .mosaic-enabled .select2-results {
   max-height: none;
