@@ -959,6 +959,59 @@
     </value>
   </record>
 
+<!-- Plone5.2 - These two 'available_actions' records were removed in a later version of Mosaic,
+                causing the new castle site install to fail while registering tiles.
+                As these are expected in the castle default registry, we'll add them back in here
+                and then mark them for removal in the upgrade profile. 
+  -->
+  <record name="plone.app.mosaic.structure_tiles.text.available_actions">
+    <field type="plone.registry.field.List">
+      <title>Available actions for the Text structure tile</title>
+      <value_type type="plone.registry.field.TextLine" />
+    </field>
+    <value>
+      <element>toolbar-undo</element>
+      <element>toolbar-redo</element>
+      <element>toolbar-styleselect</element>
+      <element>toolbar-bold</element>
+      <element>toolbar-italic</element>
+      <element>toolbar-alignleft</element>
+      <element>toolbar-aligncenter</element>
+      <element>toolbar-alignright</element>
+      <element>toolbar-alignjustify</element>
+      <element>toolbar-bullist</element>
+      <element>toolbar-numlist</element>
+      <element>toolbar-ploneimage</element>
+      <element>toolbar-unlink</element>
+      <element>toolbar-plonelink</element>
+    </value>
+  </record>
+
+  <record name="plone.app.mosaic.app_tiles.plone_app_standardtiles_rawhtml.available_actions">
+    <field type="plone.registry.field.List">
+      <title>Available actions for the raw html tile</title>
+      <value_type type="plone.registry.field.TextLine" />
+    </field>
+    <value>
+      <element>toolbar-undo</element>
+      <element>toolbar-redo</element>
+      <element>toolbar-styleselect</element>
+      <element>toolbar-bold</element>
+      <element>toolbar-italic</element>
+      <element>toolbar-alignleft</element>
+      <element>toolbar-aligncenter</element>
+      <element>toolbar-alignright</element>
+      <element>toolbar-alignjustify</element>
+      <element>toolbar-bullist</element>
+      <element>toolbar-numlist</element>
+      <element>toolbar-ploneimage</element>
+      <element>toolbar-unlink</element>
+      <element>toolbar-plonelink</element>
+    </value>
+  </record>
+
+  <!--  -->
+
   <record name="plone.app.blocks.default_layout">
     <field type="plone.registry.field.ASCIILine" />
     <value>++contentlayout++default/basic.html</value>
