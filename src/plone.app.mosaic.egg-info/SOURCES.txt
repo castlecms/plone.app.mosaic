@@ -1,6 +1,7 @@
 CHANGES.rst
 LICENSE
 README.rst
+bootstrap.py
 requirements.txt
 setup.py
 docs/Blocks.pdf
@@ -10,6 +11,7 @@ docs/Makefile
 docs/TODO.docs.rst
 docs/_robot.rst
 docs/_selectors.robot
+docs/_site-layouts.rst
 docs/_structure_tiles_in_saved_layouts.rst
 docs/_typeviews.rst
 docs/add_structure_tile.png
@@ -24,8 +26,11 @@ docs/rich_text_buttons.rst
 docs/rich_text_editor_buttons.png
 docs/site-layouts.rst
 docs/tiles.rst
+docs/_screenshots/README
 docs/_static/custom.css
 docs/_templates/layout.html
+src/.DS_Store
+src/plone/.DS_Store
 src/plone/__init__.py
 src/plone.app.mosaic.egg-info/PKG-INFO
 src/plone.app.mosaic.egg-info/SOURCES.txt
@@ -35,7 +40,9 @@ src/plone.app.mosaic.egg-info/namespace_packages.txt
 src/plone.app.mosaic.egg-info/not-zip-safe
 src/plone.app.mosaic.egg-info/requires.txt
 src/plone.app.mosaic.egg-info/top_level.txt
+src/plone/app/.DS_Store
 src/plone/app/__init__.py
+src/plone/app/mosaic/.DS_Store
 src/plone/app/mosaic/__init__.py
 src/plone/app/mosaic/configure.zcml
 src/plone/app/mosaic/forms.py
@@ -54,6 +61,7 @@ src/plone/app/mosaic/upgrades.py
 src/plone/app/mosaic/upgrades.zcml
 src/plone/app/mosaic/utils.py
 src/plone/app/mosaic/widget.py
+src/plone/app/mosaic/browser/.DS_Store
 src/plone/app/mosaic/browser/__init__.py
 src/plone/app/mosaic/browser/configure.zcml
 src/plone/app/mosaic/browser/editor.py
@@ -79,6 +87,7 @@ src/plone/app/mosaic/browser/static/css/mosaic.grid.less
 src/plone/app/mosaic/browser/static/css/mosaic.layouts.less
 src/plone/app/mosaic/browser/static/css/mosaic.pattern.less
 src/plone/app/mosaic/browser/static/css/mosaic.styles.less
+src/plone/app/mosaic/browser/static/css/mosaic.tiles.less
 src/plone/app/mosaic/browser/static/css/mosaic.tinymce.less
 src/plone/app/mosaic/browser/static/css/mosaic.toolbar.less
 src/plone/app/mosaic/browser/static/img/confirm.svg
@@ -105,6 +114,8 @@ src/plone/app/mosaic/browser/static/js/mosaic.panel.js
 src/plone/app/mosaic/browser/static/js/mosaic.pattern.js
 src/plone/app/mosaic/browser/static/js/mosaic.tile.js
 src/plone/app/mosaic/browser/static/js/mosaic.toolbar.js
+src/plone/app/mosaic/browser/static/js/mosaic.undo.js
+src/plone/app/mosaic/browser/static/js/mosaic.upload.js
 src/plone/app/mosaic/browser/templates/layouts-editor.pt
 src/plone/app/mosaic/layouts/bs3demo/default.html
 src/plone/app/mosaic/layouts/bs3demo/jumbotron.html
@@ -154,6 +165,7 @@ src/plone/app/mosaic/tests/test_setup.py
 src/plone/app/mosaic/tests/test_widget.py
 src/plone/app/mosaic/tests/robot/keywords.robot
 src/plone/app/mosaic/tests/robot/test_editor.robot
+src/plone/app/mosaic/tests/robot/test_example.robot
 src/plone/app/mosaic/tests/robot/test_installation.robot
 src/plone/app/mosaic/tests/robot/test_layout.robot
 src/plone/app/mosaic/tests/robot/test_sitelayout.robot

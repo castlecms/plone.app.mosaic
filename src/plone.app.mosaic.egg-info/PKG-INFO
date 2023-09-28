@@ -1,13 +1,11 @@
 Metadata-Version: 2.1
 Name: plone.app.mosaic
-Version: 2.2.5
+Version: 2.2.5.dev0
 Summary: Plone Mosaic Site Builder and Site Layout
 Home-page: https://github.com/plone/plone.app.mosaic
-Author: The Plone Community
-Author-email: foundation@plone.org
+Author: 
+Author-email: 
 License: gpl
-Keywords: site builder collage
-Platform: UNKNOWN
 Classifier: Development Status :: 5 - Production/Stable
 Classifier: Environment :: Web Environment
 Classifier: Framework :: Plone
@@ -27,8 +25,24 @@ License-File: LICENSE
 Plone Mosaic
 ============
 
-**Plone Mosaic** is a site builder and layout solution for Plone.
+**Fork of mosaic for castle cms**
 
+(right now, it's unclear if it is worth getting back onto master)
+
+
+Building bundle:
+
+    ./bin/plone-compile-resources --site-id=Castle --bundle=mosaic
+
+
+Releasing:
+
+    python setup.py sdist
+
+
+**Plone Mosaic** is a new layout solution for Plone.
+It's built for Plone 5,
+but should also work on Plone 4.3 with plone.app.widgets.
 Read this introduction and `the package documentation`__ for more details how to use this package.
 
 __  http://plone-app-mosaic.s3-website-us-east-1.amazonaws.com/latest/
@@ -264,6 +278,92 @@ Just add ``Debug`` keyword anywhere to pause the robot in the middle of the scre
 Changelog
 =========
 
+2.0.0.dev245(12/24/2019)
+------------------------
+
+- Show a message to be clear when fields are hidden from properties pane
+  [lucid-0]
+
+2.0.0.dev24 (01/24/2019)
+------------------------
+
+- Handle missing tile config when deleting
+  [vangheem]
+
+2.0.0.dev23 (01/24/2019)
+------------------------
+
+- fix build
+
+2.0.0.dev22 (01/24/2019)
+------------------------
+
+- tweak so form is auto submitted correctly with dynamic
+
+2.0.0.dev21 (01/23/2019)
+------------------------
+
+- be able to specify `tile_type_id` in tile config
+  [vangheem]
+
+2.0.0.dev20 (01/17/2019)
+------------------------
+
+- fix select layout view
+  [vangheem]
+
+2.0.0.dev19 (unreleased)
+------------------------
+
+- Strip out protect.js script from responses
+  [vangheem]
+
+
+2.0.0.dev18 (2018-10-21)
+------------------------
+
+- rebuild js/css
+  [vangheem]
+
+- Feature: provide ability to give options to field renderer
+  [vangheem]
+
+- Removed old code that duplicated TinyMCE editors (ported from master)
+  [obct537]
+
+- Fix: plone_pattern_setting view lookup ran into empty, now renders all.
+  [jensens]
+
+- do not import all of bootstrap
+  [vangheem]
+
+- Log warning if plone_pattern_settings view was not found.
+  [jensens]
+
+- Depend on plone.app.contenttypes gs-profile.
+  [jensens]
+
+- Remove superfluos empty testing gs profile and its zcml.
+  [jensens]
+
+- Fixes: TinyMCE focus issues, disables row merging
+  [vangheem]
+
+- UX: Renames "Close" to "Done" on properties form.
+  [vangheem]
+
+- Fixes #2313: Pattern settings are not applied to the body tag for mosaic layouts.
+  [jensens]
+
+- Drop more Plone 4 compatibility code, registrations and imports.
+  Simplify test setup.
+  Minor code cleanup.
+  [jensens]
+
+- Move list of valid layout view names for LayoutWidget in a module variable, so it can be extended on demand.
+  [jensens]
+
+- Fix robot tests in docs to no run into timing traps.
 2.2.5 (2022-06-28)
 ------------------
 
@@ -683,6 +783,23 @@ Bug fixes:
 - Fix reference to default layout preview image
   [vangheem]
 
+- Fix bug when tinymce editor would no longer work when dragging one rich text tile
+  around another rich text tile.
+  [vangheem]
+
+- Do not set own overhead space of edit modal, the default should apply.
+  [jensens]
+
+- Remove testing for Plone 4.3. For Plone 4.3 support, please use
+  plone.app.mosaic < 2.0.
+  [datakurre]
+
+- Move tile remove button onto tile instead of in toolbar
+  [vangheem]
+
+- Fix modal to be structured like other plone modals
+  [vangheem]
+
 - Fix issue where pattern settings are not applied to the body tag for mosaic
   layouts
   [jensens]
@@ -954,6 +1071,4 @@ Fixes:
 ------------------
 
 - First technology preview release.
-
-
 
