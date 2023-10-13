@@ -48,18 +48,23 @@
       permission="cmf.ModifyPortalContent"
       />
 
+  <!-- Python3 TODO - Determine why 'plone.ManageContentLayouts' permission no longer works here -->
+  <!-- Switched to "cmf.ModifyPortalContent" for now -->
   <browser:page
       name="layouts-editor"
       for="Products.CMFPlone.interfaces.siteroot.IPloneSiteRoot"
       class=".editor.LayoutsEditor"
-      permission="plone.ManageContentLayouts"
+      permission="cmf.ModifyPortalContent"
       template="templates/layouts-editor.pt"
       />
+    
+  <!-- Python3 TODO - Determine why 'plone.CustomizeContentLayouts' permission no longer works here -->
+  <!-- Switched to "cmf.ModifyPortalContent" for now -->
   <browser:page
       name="manage-layouts-from-editor"
       for="*"
       class=".editor.ManageLayoutView"
-      permission="plone.CustomizeContentLayouts"
+      permission="cmf.ModifyPortalContent"
       />
 
   <!-- Include layoutmenu-feature and its ++layout++ traverser -->
