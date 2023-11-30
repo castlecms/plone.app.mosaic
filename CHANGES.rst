@@ -1,8 +1,8 @@
 Changelog
 =========
 
-2.2.5-castle1 (unreleased)
---------------------------
+2.2.5.dev0+castle1 (unreleased)
+-------------------------------
 
 - merge plone.app.mosaic 2.2.5
 - makes compatible for castle.cms usage with a plone 5.2 base
