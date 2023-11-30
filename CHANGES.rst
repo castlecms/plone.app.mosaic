@@ -1,7 +1,14 @@
 Changelog
 =========
 
-2.0.0.dev245(12/24/2019)
+2.2.5-castle1 (unreleased)
+--------------------------
+
+- merge plone.app.mosaic 2.2.5
+- makes compatible for castle.cms usage with a plone 5.2 base
+
+
+2.0.0.dev25(12/24/2019)
 ------------------------
 
 - Show a message to be clear when fields are hidden from properties pane
