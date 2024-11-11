@@ -30,6 +30,7 @@ from zope.interface import Interface
 from zope.schema.interfaces import IField
 
 import os
+import six
 
 
 def _getWidgetName(field, widgets, request):
@@ -37,7 +38,7 @@ def _getWidgetName(field, widgets, request):
         factory = widgets[field.__name__]
     else:
         factory = getMultiAdapter((field, request), IFieldWidget)
-    if isinstance(factory, basestring):
+    if isinstance(factory, six.string_types):
         return factory
     elif isinstance(factory, ParameterizedWidget):
         factory = factory.widget_factory

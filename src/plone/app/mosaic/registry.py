@@ -82,13 +82,13 @@ class MosaicRegistry(object):
         for action_type in ['primary_actions', 'secondary_actions']:
             config[action_type] = []
             key = '%s.%s' % (self.prefix, action_type)
-            actions = settings.get(key, {}).items()
+            actions = list(settings.get(key, {}).items())
             actions.sort(cmp=weightedSort)
             for key, action in actions:
                 # sort items
                 items = action.get('items', {})
                 if isinstance(items, dict):
-                    items = items.values()
+                    items = list(items.values())
                 if items:
                     action['items'] = items
                     action['items'].sort(key=itemgetter('weight'))

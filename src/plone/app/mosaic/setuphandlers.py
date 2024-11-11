@@ -5,7 +5,7 @@ from plone.app.blocks.utils import resolveResource
 from plone.app.mosaic.interfaces import IMosaicLayer
 from plone.app.mosaic.utils import getPersistentResourceDirectory
 from plone.resource.manifest import MANIFEST_FILENAME
-from StringIO import StringIO
+from io import StringIO
 from zope.component import getUtility
 from zope.interface import alsoProvides
 from zope.schema.interfaces import IVocabularyFactory

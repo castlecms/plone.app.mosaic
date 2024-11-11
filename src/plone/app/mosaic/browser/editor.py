@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from ConfigParser import SafeConfigParser
+from six.moves.configparser import SafeConfigParser
 from plone import api
 from plone.app.blocks.interfaces import CONTENT_LAYOUT_MANIFEST_FORMAT
 from plone.app.blocks.interfaces import CONTENT_LAYOUT_RESOURCE_NAME
@@ -19,6 +19,7 @@ from zope.publisher.browser import BrowserView
 
 import io
 import json
+import six
 
 
 def loadManifest(data):
@@ -217,7 +218,7 @@ class LayoutsEditor(BrowserView):
         hidden = registry['plone.app.mosaic.hidden_content_layouts']
         key = self.request.form.get('layout')
         if key and key not in hidden:
-            hidden.append(unicode(key))
+            hidden.append(six.text_type(key))
             registry['plone.app.mosaic.hidden_content_layouts'] = hidden
 
     def get_layout_id(self, layout):

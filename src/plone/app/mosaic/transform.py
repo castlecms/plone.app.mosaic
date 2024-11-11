@@ -18,6 +18,7 @@ from zope.viewlet.interfaces import IViewletManager
 
 import logging
 import re
+from six.moves import map
 
 
 logger = logging.getLogger(__name__)
@@ -51,7 +52,7 @@ class HTTPHeaders(object):
             IViewletManager, name='plone.httpheaders'
         )
         if manager is not None:
-            headers = map(str.lower, self.request.response.headers)
+            headers = list(map(str.lower, self.request.response.headers))
             for name, viewlet in getAdapters(
                 (context, self.request, self.published, manager),
                 IViewlet

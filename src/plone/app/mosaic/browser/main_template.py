@@ -13,8 +13,8 @@ from Products.CMFPlone.browser.interfaces import IMainTemplate
 from Products.Five import BrowserView
 from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
 from repoze.xmliter.utils import getHTMLSerializer
-from urlparse import unquote
-from urlparse import urljoin
+from six.moves.urllib.parse import unquote
+from six.moves.urllib.parse import urljoin
 from zExceptions import NotFound
 from zope.component import getMultiAdapter
 from zope.interface import alsoProvides
@@ -24,6 +24,9 @@ import logging
 import os
 import pkg_resources
 import re
+from six.moves import filter
+from six.moves import map
+import six
 
 NSMAP = {'metal': 'http://namespaces.zope.org/metal'}
 slotsXPath = etree.XPath("//*[@data-slots]")
@@ -32,7 +35,7 @@ logger = logging.getLogger('plone.app.mosaic')
 
 
 def cook_layout_cachekey(func, layout, ajax):
-    if isinstance(layout, unicode):
+    if isinstance(layout, six.text_type):
         layout = layout.encode('utf-8', 'replace')
     return md5(layout).hexdigest(), ajax
 
@@ -75,9 +78,9 @@ def parse_data_slots(value):
         prepends = children
         appends = ''
 
-    wrappers = filter(bool, map(str.strip, wrappers.split()))
-    prepends = filter(bool, map(str.strip, prepends.split()))
-    appends = filter(bool, map(str.strip, appends.split()))
+    wrappers = list(filter(bool, list(map(str.strip, wrappers.split()))))
+    prepends = list(filter(bool, list(map(str.strip, prepends.split()))))
+    appends = list(filter(bool, list(map(str.strip, appends.split()))))
 
     return wrappers, prepends, appends
 
@@ -116,7 +119,7 @@ def cook_layout(layout, ajax):
     layout = re.sub('\r', '\n', re.sub('\r\n', '\n', layout))
 
     # Parse layout
-    if isinstance(layout, unicode):
+    if isinstance(layout, six.text_type):
         result = getHTMLSerializer([layout.encode('utf-8')], encoding='utf-8')
     else:
         result = getHTMLSerializer([layout], encoding='utf-8')
