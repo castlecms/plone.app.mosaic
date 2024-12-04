@@ -47,10 +47,10 @@ setup(
         'six',
         'plone.subrequest>=1.8.6',
         'plone.tiles>=2.2.0',
-        'plone.app.blocks>=4.3.1',
+        # 'plone.app.blocks>=4.3.1',
         'plone.app.tiles>=3.1.1',
         'plone.app.drafts>=1.1.3',
-        'plone.app.standardtiles>=2.3.1',
+        # 'plone.app.standardtiles>=2.3.1',
         'Products.CMFPlone>=5.1',
         'plone.app.layout',
         # new IRichTextBehavior Interface class
