@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from hashlib import md5
+import hashlib
 from lxml import etree
 from lxml import html
 from plone.app.blocks.interfaces import IBlocksTransformEnabled
@@ -31,10 +31,18 @@ slotsXPath = etree.XPath("//*[@data-slots]")
 logger = logging.getLogger('plone.app.mosaic')
 
 
+def md5_fips(data):
+    try:
+        return hashlib.new('md5', data, usedforsecurity=False)
+    except TypeError:
+        # in case FIPS is not supported
+        return hashlib.md5(data)
+
+
 def cook_layout_cachekey(func, layout, ajax):
     if isinstance(layout, unicode):
         layout = layout.encode('utf-8', 'replace')
-    return md5(layout).hexdigest(), ajax
+    return md5_fips(layout).hexdigest(), ajax
 
 
 def parse_data_slots(value):
